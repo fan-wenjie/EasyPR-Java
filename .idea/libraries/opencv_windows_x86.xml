@@ -3,7 +3,7 @@
     <CLASSES />
     <JAVADOC />
     <NATIVE>
-      <root url="jar://G:/360Downloads/javacv-0.10-bin/javacv-bin/opencv-windows-x86.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/opencv-windows-x86.jar!/" />
     </NATIVE>
     <SOURCES />
   </library>
