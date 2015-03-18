@@ -28,7 +28,7 @@ public class PlateDetect {
             for (int i = 0; i < size; i++)
             {
                 Mat img = resultVec.get(i);
-                String str = "/Users/zhoushiwei/Dropbox/EasyPR/image/tmp/plate_judge_result_" + Integer.valueOf(i).toString() + ".jpg";
+                String str = "image/tmp/plate_judge_result_" + Integer.valueOf(i).toString() + ".jpg";
                 imwrite(str, img);
             }
         }

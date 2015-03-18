@@ -12,7 +12,6 @@ import static org.bytedeco.javacpp.opencv_core.*;
 public class PlateJudge {
 
     public PlateJudge() {
-        path = "model/svm.xml";
         loadModel();
     }
 
@@ -78,5 +77,5 @@ public class PlateJudge {
     private SVMCallback features = new Features();
 
     //! 模型存储路径
-    private String path;
+    private String path = "res/model/svm.xml";
 }

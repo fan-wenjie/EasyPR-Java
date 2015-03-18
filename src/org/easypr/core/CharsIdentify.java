@@ -19,10 +19,7 @@ import java.util.Map;
 public class CharsIdentify {
 
     public CharsIdentify(){
-        this.predictSize = 20;
-        this.path = "./model/ann.xml";
         loadModel();
-
         if(this.map.isEmpty()){
             this.map.put("zh_cuan","川");
             this.map.put("zh_e","鄂");
@@ -155,9 +152,9 @@ public class CharsIdentify {
 
     private CvANN_MLP ann = new CvANN_MLP();
 
-    private String path;
+    private String path = "res/model/ann.xml";
 
-    private int predictSize;
+    private int predictSize = 20;
 
     private Map<String,String> map = new HashMap<String, String>();
 
