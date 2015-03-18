@@ -8,5 +8,10 @@
     </CLASSES>
     <JAVADOC />
     <SOURCES />
+    <excluded>
+      <root url="jar://$MAVEN_REPOSITORY$/org/bytedeco/javacpp-presets/opencv/2.4.10-0.10/opencv-2.4.10-0.10.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/bytedeco/javacpp/0.10/javacpp-0.10.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/bytedeco/javacv/0.10/javacv-0.10.jar!/" />
+    </excluded>
   </library>
 </component>

@@ -67,12 +67,14 @@ public class Features implements SVMCallback{
         //Asign values to feature,样本特征为水平、垂直直方图
         int j = 0;
         for (int i = 0; i < vhist.cols(); i++, ++j) {
-            float val = (Float) MatHelper.getElement(vhist, i);
-            MatHelper.setElement(out, val, j);
+            byte []buffer = new byte[4];
+            vhist.ptr(i).get(buffer);
+            out.ptr(j).put(buffer);
         }
         for (int i = 0; i < hhist.cols(); i++, ++j) {
-            float val = (Float) MatHelper.getElement(hhist, i);
-            MatHelper.setElement(out, val, j);
+            byte []buffer = new byte[4];
+            hhist.ptr(i).get(buffer);
+            out.ptr(j).put(buffer);
         }
         return out;
     }

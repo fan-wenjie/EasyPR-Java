@@ -119,12 +119,14 @@ public class CharsIdentify {
 
         int j = 0;
         for(int i =0;i<vhist.cols();++i,++j){
-            float val = (Float)MatHelper.getElement(vhist,i);
-            MatHelper.setElement(out,val,j);
+            byte []buffer = new byte[4];
+            vhist.ptr(i).get(buffer);
+            out.ptr(j).put(buffer);
         }
         for(int i =0;i<hhist.cols();++i,++j){
-            float val = (Float)MatHelper.getElement(hhist,i);
-            MatHelper.setElement(out,val,j);
+            byte []buffer = new byte[4];
+            hhist.ptr(i).get(buffer);
+            out.ptr(j).put(buffer);
         }
         for(int x=0; x<lowData.cols(); x++)
             for(int y=0; y<lowData.rows(); y++,++j){

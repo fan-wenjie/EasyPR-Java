@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="opencv-windows-x86">
+    <CLASSES />
+    <JAVADOC />
+    <NATIVE>
+      <root url="jar://G:/360Downloads/javacv-0.10-bin/javacv-bin/opencv-windows-x86.jar!/" />
+    </NATIVE>
+    <SOURCES />
+  </library>
+</component>

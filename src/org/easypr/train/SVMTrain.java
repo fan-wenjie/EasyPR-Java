@@ -1,7 +1,6 @@
 package org.easypr.train;
 
 
-import org.bytedeco.javacpp.opencv_core;
 import org.easypr.core.Features;
 import org.easypr.util.MatHelper;
 import org.easypr.core.SVMCallback;
@@ -14,8 +13,9 @@ import org.easypr.util.Util;
 
 import java.util.*;
 
-/**
- * Created by Anonymous on 2015-03-17.
+/*
+ * Created by fanwenjie
+ * @version 1.1
  */
 public class SVMTrain {
 
