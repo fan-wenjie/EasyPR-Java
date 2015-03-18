@@ -1,6 +1,6 @@
 package org.easypr.core;
 
-import org.easypr.util.MatHelper;
+import org.easypr.util.Convert;
 
 import static org.bytedeco.javacpp.opencv_ml.*;
 import static org.bytedeco.javacpp.opencv_imgproc.*;
@@ -70,7 +70,7 @@ public class CharsIdentify {
             result = 0;
             float maxVal = -2;
             for(int j=0;j<numCharacter;j++){
-                float val = (Float) MatHelper.getElement(output, j);
+                float val = Convert.toFloat(output.ptr(j));
                 if(val > maxVal){
                     maxVal = val;
                     result = j;
@@ -80,7 +80,7 @@ public class CharsIdentify {
             result = numCharacter;
             float maxVal = -2;
             for(int j=numCharacter;j<numAll;++j){
-                float val = (Float)MatHelper.getElement(output,j);
+                float val = Convert.toFloat(output.ptr(j));
                 if(val > maxVal){
                     maxVal = val;
                     result = j;
@@ -95,12 +95,12 @@ public class CharsIdentify {
         Mat mhist = Mat.zeros(1,sz,CV_32F).asMat();
         for(int j=0; j<sz; j++){
             Mat data = (t==0)?img.col(j):img.row(j);
-            MatHelper.setElement(mhist,(float)countNonZero(data),j);
+            mhist.ptr(j).put(Convert.getBytes((float) countNonZero(data)));
         }
         float max = 0;
         for(int j=0;j<sz;++j)
-            if((Float)MatHelper.getElement(mhist,j)>max)
-                max = (Float)MatHelper.getElement(mhist,j);
+            if(Convert.toFloat(mhist.ptr(j))>max)
+                max = Convert.toFloat(mhist.ptr(j));
         if(max>0)
             mhist.convertTo(mhist,-1,1.0f/max,0);
         return mhist;
@@ -131,7 +131,7 @@ public class CharsIdentify {
         for(int x=0; x<lowData.cols(); x++)
             for(int y=0; y<lowData.rows(); y++,++j){
                 float val = lowData.ptr(x,y).get()&0xFF;
-                MatHelper.setElement(out,val,j);
+                out.ptr(j).put(Convert.getBytes(val));
             }
         return out;
     }

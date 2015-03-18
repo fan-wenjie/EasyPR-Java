@@ -1,7 +1,7 @@
 package org.easypr.core;
 
 import org.bytedeco.javacpp.BytePointer;
-import org.easypr.util.MatHelper;
+import org.easypr.util.Convert;
 
 import java.util.Vector;
 
@@ -189,8 +189,8 @@ public class CharsSegment {
         int charSize = CHAR_SIZE;    //统一每个字符的大小
         Mat transformMat = Mat.eye(2, 3, CV_32F).asMat();
         int m = (w > h) ? w : h;
-        MatHelper.setElement(transformMat, m / 2 - w / 2, 0, 2);
-        MatHelper.setElement(transformMat, m / 2 - h / 2, 1, 2);
+        transformMat.ptr(0,2).put(Convert.getBytes(((m-w) / 2f)));
+        transformMat.ptr(1,2).put(Convert.getBytes((m-h)/2f));
         Mat warpImage = new Mat(m, m, in.type());
         warpAffine(in, warpImage, transformMat, warpImage.size(), INTER_LINEAR, BORDER_CONSTANT, new Scalar(0));
         Mat out = new Mat();
@@ -268,11 +268,11 @@ public class CharsSegment {
                 if (img.ptr(i, j).get() != img.ptr(i, j + 1).get())
                     jumpCount++;
             }
-            MatHelper.setElement(jump, jumpCount, i);
+            jump.ptr(i).put(Convert.getBytes((float)jumpCount));
         }
         for (int i = 0; i < img.rows(); i++) {
 
-            if ((Float) MatHelper.getElement(jump, i) <= x) {
+            if (Convert.toFloat(jump.ptr(i))<=x){
                 for (int j = 0; j < img.cols(); j++) {
                     img.ptr(i, j).put((byte) 0);
                 }

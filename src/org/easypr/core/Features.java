@@ -1,6 +1,6 @@
 package org.easypr.core;
 
-import org.easypr.util.MatHelper;
+import org.easypr.util.Convert;
 
 import static org.bytedeco.javacpp.opencv_core.*;
 import static org.bytedeco.javacpp.opencv_imgproc.*;
@@ -36,14 +36,14 @@ public class Features implements SVMCallback{
 
         for (int j = 0; j < sz; j++) {
             Mat data = (t != 0) ? img.row(j) : img.col(j);
-            MatHelper.setElement(mhist, countNonZero(data), j);//统计这一行或一列中，非零元素的个数，并保存到mhist中
+            mhist.ptr(j).put(Convert.getBytes((float)countNonZero(data)));//统计这一行或一列中，非零元素的个数，并保存到mhist中
         }
 
         //Normalize histogram
         double max = 0;
         for (int j = 0; j < sz; j++)
-            if ((Float) MatHelper.getElement(mhist, j) > max)
-                max = (Float) MatHelper.getElement(mhist, j);
+            if (Convert.toFloat(mhist.ptr(j))>max)
+                max = Convert.toFloat(mhist.ptr(j));
         if (max > 0)
             mhist.convertTo(mhist, -1, 1.0f / max, 0);//用mhist直方图中的最大值，归一化直方图
         return mhist;

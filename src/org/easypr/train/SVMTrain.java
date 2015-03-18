@@ -2,7 +2,7 @@ package org.easypr.train;
 
 
 import org.easypr.core.Features;
-import org.easypr.util.MatHelper;
+import org.easypr.util.Convert;
 import org.easypr.core.SVMCallback;
 
 import static org.bytedeco.javacpp.opencv_core.*;
@@ -173,8 +173,8 @@ public class SVMTrain {
         for (int i = 0; i < nRows; i++)
         {
 
-            final float predict = (Float)MatHelper.getElement(testingclasses_preditc,i);
-            final float real = (Float)MatHelper.getElement(testingclasses_real,i);
+            final float predict = Convert.toFloat(testingclasses_preditc.ptr(i));
+            final float real = Convert.toFloat(testingclasses_real.ptr(i));
 
             count_all ++;
 

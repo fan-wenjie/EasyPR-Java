@@ -1,7 +1,6 @@
 package org.easypr.train;
 
-import org.bytedeco.javacpp.BytePointer;
-import org.easypr.util.MatHelper;
+import org.easypr.util.Convert;
 import org.easypr.core.Features;
 import org.easypr.util.Util;
 
@@ -74,7 +73,7 @@ public class ANNTrain {
         for (int x = 0; x < lowData.cols(); x++) {
             for (int y = 0; y < lowData.rows(); y++, ++j) {
                 float val = lowData.ptr(x, y).get() & 0xFF;
-                MatHelper.setElement(out, val, j);
+                out.ptr(j).put(Convert.getBytes(val));
             }
         }
         //if(DEBUG)
@@ -86,9 +85,9 @@ public class ANNTrain {
     public void annTrain(Mat TrainData, Mat classes, int nNeruns) {
         ann.clear();
         Mat layers = new Mat(1, 3, CV_32SC1);
-        MatHelper.setElement(layers, TrainData.cols(), 0);
-        MatHelper.setElement(layers, nNeruns, 1);
-        MatHelper.setElement(layers, numAll, 2);
+        layers.ptr(0).put(Convert.getBytes(TrainData.cols()));
+        layers.ptr(1).put(Convert.getBytes(nNeruns));
+        layers.ptr(2).put(Convert.getBytes(numAll));
         ann.create(layers, CvANN_MLP.SIGMOID_SYM, 1, 1);
 
         //Prepare trainClases
@@ -98,10 +97,10 @@ public class ANNTrain {
         for (int i = 0; i < trainClasses.rows(); i++) {
             for (int k = 0; k < trainClasses.cols(); k++) {
                 //If class of data i is same than a k class
-                if (k == (Integer) MatHelper.getElement(classes, i))
-                    MatHelper.setElement(trainClasses, 1, i, k);
+                if (k == Convert.toInt(classes.ptr(i)))
+                    trainClasses.ptr(i,k).put(Convert.getBytes(1f));
                 else
-                    MatHelper.setElement(trainClasses, 0, i, k);
+                    trainClasses.ptr(i,k).put(Convert.getBytes(0f));
             }
         }
         Mat weights = new Mat(1, TrainData.rows(), CV_32FC1, Scalar.all(1));
