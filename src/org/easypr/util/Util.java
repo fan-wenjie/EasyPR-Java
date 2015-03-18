@@ -3,9 +3,11 @@ package org.easypr.util;
 import java.io.File;
 import java.util.Vector;
 
-/**
- * Created by Anonymous on 2015-03-17.
+/*
+ * Created by fanwenjie
+ * @version 1.1
  */
+
 public class Util {
 
     public static void getFiles(File dir,Vector<String> files){

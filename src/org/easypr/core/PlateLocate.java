@@ -6,9 +6,11 @@ import static org.bytedeco.javacpp.opencv_core.*;
 import static org.bytedeco.javacpp.opencv_highgui.*;
 import static org.bytedeco.javacpp.opencv_imgproc.*;
 
-/**
- * Created by fanwenjie on 15/3/16.
+/*
+ * Created by fanwenjie
+ * @version 1.1
  */
+
 public class PlateLocate {
 
     public PlateLocate()
@@ -69,8 +71,8 @@ public class PlateLocate {
         float rmax= aspect+aspect*error;
 
         int area= (int)(mr.size().height() * mr.size().width());
-        float r = (float)mr.size().width() / (float)mr.size().height();
-        if(r < 1)   r= (float)mr.size().height() / (float)mr.size().width();
+        float r = mr.size().width() / mr.size().height();
+        if(r < 1)   r= mr.size().height() / mr.size().width();
         return area >= min && area <= max  &&  r >= rmin && r <= rmax;
     }
 
@@ -230,7 +232,7 @@ public class PlateLocate {
                         line( result, rect_points[j], rect_points[(j+1)%4], new Scalar(0,255,255,255), 1, 8 ,0);
                 }*/
 
-                float r = (float)minRect.size().width() / (float)minRect.size().height();
+                float r = minRect.size().width() / minRect.size().height();
                 float angle = minRect.angle();
                 Size rect_size = new Size((int)minRect.size().width(),(int)minRect.size().height());
                 if (r < 1)

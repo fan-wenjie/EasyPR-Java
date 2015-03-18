@@ -4,9 +4,11 @@ import org.bytedeco.javacpp.opencv_core.*;
 
 import java.util.Vector;
 
-/**
- * Created by Anonymous on 2015-03-17.
+/*
+ * Created by fanwenjie
+ * @version 1.1
  */
+
 public class PlateRecognize {
 
     public int plateRecognize(Mat src, Vector<String> licenseVec) {

@@ -2,9 +2,11 @@ package org.easypr.core;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
 
-/**
- * Created by Anonymous on 2015-03-17.
+/*
+ * Created by fanwenjie
+ * @version 1.1
  */
+
 public interface SVMCallback {
 
     /***
