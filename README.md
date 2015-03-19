@@ -1,5 +1,5 @@
 # EasyPR-Java
-车牌识别软件EasyPR(liuruoze)的Java版本
+车牌识别软件EasyPR的Java版本，该项目尚处于Alpha版，恐怕不能达到预期效果
 
 
 |版本 | 开发者 | 版本 | 地址 
