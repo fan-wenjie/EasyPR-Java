@@ -31,7 +31,7 @@ public class SVMTrain {
 
 
     private void learn2Plate(float bound, final String name) {
-        final String filePath = "train/data/plate_detect_svm/learn/" + name;
+        final String filePath = "res/train/data/plate_detect_svm/learn/" + name;
         Vector<String> files = new Vector<String>();
         ////获取该路径下的所有文件
         Util.getFiles(filePath, files);
@@ -44,14 +44,14 @@ public class SVMTrain {
         ////随机选取70%作为训练数据，30%作为测试数据
         int boundry = (int) (bound * size);
 
-        Util.recreateDir("train/data/plate_detect_svm/train/" + name);
-        Util.recreateDir("train/data/plate_detect_svm/test/" + name);
+        Util.recreateDir("res/train/data/plate_detect_svm/train/" + name);
+        Util.recreateDir("res/train/data/plate_detect_svm/test/" + name);
 
         System.out.println("Save " + name + " train!");
         for (int i = 0; i < boundry; i++) {
             System.out.println(files.get(i));
             Mat img = imread(files.get(i));
-            String str = "train/data/plate_detect_svm/train/" + name + "/" + name + "_" + Integer.valueOf(i).toString() + ".jpg";
+            String str = "res/train/data/plate_detect_svm/train/" + name + "/" + name + "_" + Integer.valueOf(i).toString() + ".jpg";
             imwrite(str, img);
         }
 
@@ -59,14 +59,14 @@ public class SVMTrain {
         for (int i = boundry; i < size; i++) {
             System.out.println(files.get(i));
             Mat img = imread(files.get(i));
-            String str = "train/data/plate_detect_svm/test/" + name + "/" + name + "_" + Integer.valueOf(i).toString() + ".jpg";
+            String str = "res/train/data/plate_detect_svm/test/" + name + "/" + name + "_" + Integer.valueOf(i).toString() + ".jpg";
             imwrite(str, img);
         }
     }
 
     private void getPlateTrain(Mat trainingImages, Vector<Integer> trainingLabels, final String name) {
         int label = 1;
-        final String filePath = "train/data/plate_detect_svm/train/" + name;
+        final String filePath = "res/train/data/plate_detect_svm/train/" + name;
         Vector<String> files = new Vector<String>();
 
         ////获取该路径下的所有文件
@@ -92,7 +92,7 @@ public class SVMTrain {
 
     private void getPlateTest(MatVector testingImages,Vector<Integer> testingLabels,final String name){
         int label = 1;
-        final String filePath = "train/data/plate_detect_svm/test/"+name;
+        final String filePath = "res/train/data/plate_detect_svm/test/"+name;
         Vector<String> files = new Vector<String>();
         Util.getFiles(filePath, files);
 
@@ -300,13 +300,13 @@ public class SVMTrain {
 
             System.out.println("Svm generate done!");
 
-            CvFileStorage fsTo = CvFileStorage.open("train/svm.xml", CvMemStorage.create(),CV_STORAGE_WRITE);
+            CvFileStorage fsTo = CvFileStorage.open("res/rain/svm.xml", CvMemStorage.create(),CV_STORAGE_WRITE);
             svm.write(fsTo, "svm");
         }
         else
         {
             try {
-                String path = "train/svm.xml";
+                String path = "res/train/svm.xml";
                 svm.load(path, "svm");
             } catch (Exception err) {
             System.out.println(err.getMessage());

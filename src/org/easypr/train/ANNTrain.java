@@ -117,7 +117,7 @@ public class ANNTrain {
         Mat trainingDataf20 = new Mat();
 
         Vector<Integer> trainingLabels = new Vector<Integer>();
-        String path = "train/data/chars_recognise_ann/chars2/chars2";
+        String path = "res/train/data/chars_recognise_ann/chars2/chars2";
 
         for (int i = 0; i < numCharacter; i++) {
             System.out.println("Character: " + strCharacters[i]);
@@ -142,7 +142,7 @@ public class ANNTrain {
             }
         }
 
-        path = "train/data/chars_recognise_ann/charsChinese/charsChinese";
+        path = "res/train/data/chars_recognise_ann/charsChinese/charsChinese";
 
         for (int i = 0; i < strChinese.length; i++) {
             System.out.println("Character: " + strChinese[i]);
@@ -176,7 +176,7 @@ public class ANNTrain {
             labels[i] = trainingLabels.get(i).intValue();
         new Mat(labels).copyTo(classes);
 
-        FileStorage fs = new FileStorage("train/ann_data.xml", FileStorage.WRITE);
+        FileStorage fs = new FileStorage("res/train/ann_data.xml", FileStorage.WRITE);
         fs.writeObj("TrainingDataF5", trainingDataf5.data());
         fs.writeObj("TrainingDataF10", trainingDataf10.data());
         fs.writeObj("TrainingDataF15", trainingDataf15.data());
@@ -189,7 +189,7 @@ public class ANNTrain {
     }
 
     public void saveModel(int _predictsize, int _neurons) {
-        FileStorage fs = new FileStorage("train/ann_data.xml", FileStorage.READ);
+        FileStorage fs = new FileStorage("res/train/ann_data.xml", FileStorage.READ);
         String training = "TrainingDataF" + _predictsize;
         Mat TrainingData = new Mat(fs.get(training).readObj());
         Mat Classes = new Mat(fs.get("classes"));
@@ -206,7 +206,7 @@ public class ANNTrain {
 
         System.out.println("End the saveModelChar");
 
-        String model_name = "train/ann.xml";
+        String model_name = "res/train/ann.xml";
 
         //if(1)
         //{
