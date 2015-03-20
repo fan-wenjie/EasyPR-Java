@@ -1,5 +1,7 @@
 package org.easypr.core;
 
+import java.util.Vector;
+
 import static org.bytedeco.javacpp.opencv_core.*;
 import static org.bytedeco.javacpp.opencv_highgui.imwrite;
 
@@ -15,10 +17,10 @@ public class PlateDetect {
         plateJudge.loadModel(s);
     }
 
-    public int plateDetect(Mat src, MatVector resultVec)
+    public int plateDetect(Mat src, Vector<Mat> resultVec)
     {
         //可能是车牌的图块集合
-        MatVector matVec = new MatVector();
+        final Vector<Mat> matVec = new Vector<Mat>();
         int resultLo = plateLocate.plateLocate(src, matVec);
         if (0 != resultLo)  return -1;
         int resultJu = plateJudge.plateJudge(matVec, resultVec);

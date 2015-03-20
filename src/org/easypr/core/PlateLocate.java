@@ -103,7 +103,7 @@ public class PlateLocate {
 //! src 原始图像
 //! resultVec 一个Mat的向量，存储所有抓取到的图像
 //! 成功返回0，否则返回-1
-    public int plateLocate(Mat src, MatVector resultVec)
+    public int plateLocate(Mat src, Vector<Mat> resultVec)
     {
         Mat src_blur = new Mat();
         Mat src_gray = new Mat();
@@ -121,7 +121,7 @@ public class PlateLocate {
 
         if(debug)
         {
-            String str = "image/tmp/debug_GaussianBlur.jpg";
+            String str = "res/image/tmp/debug_GaussianBlur.jpg";
             imwrite(str, src_blur);
         }
 
@@ -130,7 +130,7 @@ public class PlateLocate {
 
         if(debug)
         {
-            String str = "image/tmp/debug_gray.jpg";
+            String str = "res/image/tmp/debug_gray.jpg";
             imwrite(str, src_gray);
         }
 
@@ -169,7 +169,7 @@ public class PlateLocate {
 
         if(debug)
         {
-            String str = "image/tmp/debug_threshold.jpg";
+            String str = "res/image/tmp/debug_threshold.jpg";
             imwrite(str, img_threshold);
         }
 
@@ -178,7 +178,7 @@ public class PlateLocate {
 
         if(debug)
         {
-            String str = "image/tmp/debug_morphology.jpg";
+            String str = "res/image/tmp/debug_morphology.jpg";
             imwrite(str, img_threshold);
         }
 
@@ -195,7 +195,7 @@ public class PlateLocate {
             //// Draw blue contours on a white image
             src.copyTo(result);
             drawContours(result,contours,-1,new Scalar(0,0,255,255));
-            String str = "image/tmp/debug_Contours.jpg";
+            String str = "res/image/tmp/debug_Contours.jpg";
             imwrite(str, result);
         }
 
@@ -250,13 +250,13 @@ public class PlateLocate {
                     //warpAffine(src, img_rotated, rotmat, src.size(), CV_INTER_CUBIC);
                     warpAffine(src,img_rotated,rotmat,src.size());
                     Mat resultMat = showResultMat(img_rotated, rect_size, minRect.center(), k++);
-                    resultVec.put(resultMat);
+                    resultVec.add(resultMat);
                 }
             }
         }
         if(debug)
         {
-            String str = "image/tmp/debug_result.jpg";
+            String str = "res/image/tmp/debug_result.jpg";
             imwrite(str, result);
         }
 
@@ -316,7 +316,7 @@ public class PlateLocate {
     public static final int DEFAULT_ANGLE = 30;
 
     //! 是否开启调试模式常量
-    public static final boolean DEFAULT_DEBUG = false;
+    public static final boolean DEFAULT_DEBUG = true;
 
     //! 高斯模糊所用变量
     protected int gaussianBlurSize;

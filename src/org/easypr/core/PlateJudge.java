@@ -1,5 +1,7 @@
 package org.easypr.core;
 
+import java.util.Vector;
+
 import static org.bytedeco.javacpp.opencv_imgproc.*;
 import static org.bytedeco.javacpp.opencv_ml.*;
 import static org.bytedeco.javacpp.opencv_core.*;
@@ -53,11 +55,11 @@ public class PlateJudge {
 
 
     //! 对多幅图像进行SVM判断
-    public int plateJudge(final MatVector inVec, MatVector resultVec) {
+    public int plateJudge(Vector<Mat> inVec, Vector<Mat> resultVec) {
         for (int j = 0; j < inVec.size(); j++) {
             Mat inMat = inVec.get(j);
             if (1 == plateJudge(inMat))
-                resultVec.put(inMat);
+                resultVec.add(inMat);
         }
         return 0;
     }

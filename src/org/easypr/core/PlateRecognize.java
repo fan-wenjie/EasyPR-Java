@@ -13,7 +13,7 @@ public class PlateRecognize {
 
     public int plateRecognize(Mat src, Vector<String> licenseVec) {
         //车牌方块集合
-        MatVector plateVec = new MatVector();
+        Vector<Mat> plateVec = new Vector<Mat>();
         int resultPD = plateDetect.plateDetect(src, plateVec);
         if (resultPD == 0) {
             int num = (int) plateVec.size();
