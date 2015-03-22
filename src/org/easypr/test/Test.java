@@ -23,7 +23,7 @@ public class Test {
         Vector<Mat> matVector = new Vector<Mat>();
         System.out.println(plateDetect.plateDetect(src,matVector));
         /*
-        if(0==plateDetect.plateDetect(src,matVector)){
+        if(0==plateDetect.plateDetect(src,matVector)){8/
             long num = matVector.size();
             for(int i=0;i<num;++i){
                 try {

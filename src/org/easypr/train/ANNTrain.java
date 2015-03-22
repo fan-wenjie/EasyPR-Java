@@ -47,28 +47,24 @@ public class ANNTrain {
     public Mat features(Mat in, int sizeData) {
         //Histogram features
         Features feature = new Features();
-        Mat vhist = feature.ProjectedHistogram(in, VERTICAL);
-        Mat hhist = feature.ProjectedHistogram(in, HORIZONTAL);
+        float[] vhist = feature.ProjectedHistogram(in, VERTICAL);
+        float[] hhist = feature.ProjectedHistogram(in, HORIZONTAL);
 
         //Low data feature
         Mat lowData = new Mat();
         resize(in, lowData, new Size(sizeData, sizeData));
 
         //Last 10 is the number of moments components
-        int numCols = vhist.cols() + hhist.cols() + lowData.cols() * lowData.cols();
+        int numCols = vhist.length + hhist.length + lowData.cols() * lowData.cols();
 
         Mat out = Mat.zeros(1, numCols, CV_32F).asMat();
         //Asign values to feature,ANN的样本特征为水平、垂直直方图和低分辨率图像所组成的矢量
         int j = 0;
-        for (int i = 0; i < vhist.cols(); i++, ++j) {
-            byte []buffer = new byte[4];
-            vhist.ptr(i).get(buffer);
-            out.ptr(j).put(buffer);
+        for (int i = 0; i < vhist.length; i++, ++j) {
+            out.ptr(j).put(Convert.getBytes(vhist[i]));
         }
-        for (int i = 0; i < hhist.cols(); i++, ++j) {
-            byte []buffer = new byte[4];
-            hhist.ptr(i).get(buffer);
-            out.ptr(j).put(buffer);
+        for (int i = 0; i < hhist.length; i++, ++j) {
+            out.ptr(j).put(Convert.getBytes(vhist[i]));
         }
         for (int x = 0; x < lowData.cols(); x++) {
             for (int y = 0; y < lowData.rows(); y++, ++j) {

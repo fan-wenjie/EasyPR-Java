@@ -1,10 +1,14 @@
 package org.easypr.core;
 
+import org.easypr.util.Convert;
+
 import java.util.Vector;
 
+import static org.bytedeco.javacpp.opencv_highgui.*;
 import static org.bytedeco.javacpp.opencv_imgproc.*;
 import static org.bytedeco.javacpp.opencv_ml.*;
 import static org.bytedeco.javacpp.opencv_core.*;
+
 
 /*
  * Created by fanwenjie
@@ -50,7 +54,8 @@ public class PlateJudge {
         //通过直方图均衡化后的彩色图进行预测
         Mat p = features.reshape(1, 1);
         p.convertTo(p, CV_32FC1);
-        return (int) svm.predict(p);
+        float ret =  svm.predict(p);
+        return (int)ret;
     }
 
 
@@ -58,6 +63,7 @@ public class PlateJudge {
     public int plateJudge(Vector<Mat> inVec, Vector<Mat> resultVec) {
         for (int j = 0; j < inVec.size(); j++) {
             Mat inMat = inVec.get(j);
+            imwrite("tmp"+Integer.valueOf(j).toString()+".jpg",inMat);
             if (1 == plateJudge(inMat))
                 resultVec.add(inMat);
         }
