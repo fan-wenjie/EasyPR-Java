@@ -60,7 +60,14 @@ public class CharsIdentify {
 
     public int classify(Mat f, Boolean isChinses){
         int result;
-        Mat output = new Mat(1,numAll,CV_32F);
+        Mat output = new Mat(1,numAll,CV_32FC1);
+
+        if(!hasPrint)
+        System.out.println("-----------");
+        if(!hasPrint)
+            for(int i=0;i<f.size(1);++i)
+                System.out.println(Convert.toFloat(f.ptr(i)));
+        hasPrint = true;
         ann.predict(f,output);
         if(!isChinses)
         {
@@ -87,43 +94,46 @@ public class CharsIdentify {
         return result;
     }
 
-    public Mat projectedHistogram(final Mat img,int t){
-        int sz = (t==0)?img.cols():img.rows();
-        Mat mhist = Mat.zeros(1,sz,CV_32F).asMat();
-        for(int j=0; j<sz; j++){
-            Mat data = (t==0)?img.col(j):img.row(j);
-            mhist.ptr(j).put(Convert.getBytes((float) countNonZero(data)));
+    public float[][] projectedHistogram(final Mat img){
+        float []nonZeroHor = new float[img.rows()];
+        float []nonZeroVer = new float[img.cols()];
+        for(int i=0;i<img.rows();++i)
+            for(int j=0;j<img.cols();++j)
+                if(0!=img.ptr(i,j).get()){
+                    ++nonZeroHor[i];
+                    ++nonZeroVer[j];
+                }
+        float [][]out = new float[][]{nonZeroVer,nonZeroHor};
+        for(int i=0;i<2;++i){
+            float max = 0;
+            for(int j=0;j<out[i].length;++j)
+                if(max<out[i][j])
+                    max = out[i][j];
+            if(max>0)
+                for(int j=0;j<out[i].length;++j)
+                    out[i][j]/=max;
         }
-        float max = 0;
-        for(int j=0;j<sz;++j)
-            if(Convert.toFloat(mhist.ptr(j))>max)
-                max = Convert.toFloat(mhist.ptr(j));
-        if(max>0)
-            mhist.convertTo(mhist,-1,1.0f/max,0);
-        return mhist;
+        return out;
     }
 
     public Mat features(final Mat in,int sizeData){
 
-        Mat vhist = projectedHistogram(in,VERTICAL);
-        Mat hhist = projectedHistogram(in,HORIZONTAL);
+        float [][]hist = projectedHistogram(in);
+        float[] vhist = hist[0];
+        float[] hhist = hist[1];
 
         Mat lowData = new Mat();
         resize(in,lowData,new Size(sizeData,sizeData));
 
-        int numCols = vhist.cols() + hhist.cols() + lowData.cols()*lowData.rows();
+        int numCols = vhist.length + hhist.length + lowData.cols()*lowData.rows();
         Mat out = Mat.zeros(1,numCols,CV_32F).asMat();
 
         int j = 0;
-        for(int i =0;i<vhist.cols();++i,++j){
-            byte []buffer = new byte[4];
-            vhist.ptr(i).get(buffer);
-            out.ptr(j).put(buffer);
+        for(int i =0;i<vhist.length;++i,++j){
+            out.ptr(j).put(Convert.getBytes(vhist[i]));
         }
-        for(int i =0;i<hhist.cols();++i,++j){
-            byte []buffer = new byte[4];
-            hhist.ptr(i).get(buffer);
-            out.ptr(j).put(buffer);
+        for(int i =0;i<hhist.length;++i,++j){
+            out.ptr(j).put(Convert.getBytes(hhist[i]));
         }
         for(int x=0; x<lowData.cols(); x++)
             for(int y=0; y<lowData.rows(); y++,++j){
@@ -142,6 +152,8 @@ public class CharsIdentify {
         this.ann.load(s,"ann");
     }
 
+    static boolean hasPrint = false;
+
     public final void setModelPath(String path){
         this.path = path;
     }
@@ -154,7 +166,7 @@ public class CharsIdentify {
 
     private String path = "res/model/ann.xml";
 
-    private int predictSize = 20;
+    private int predictSize = 10;
 
     private Map<String,String> map = new HashMap<String, String>();
 

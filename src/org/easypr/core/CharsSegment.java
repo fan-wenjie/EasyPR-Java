@@ -50,7 +50,7 @@ public class CharsSegment {
     }
 
     //! 字符分割
-    public int charsSegment(Mat input, MatVector resultVec) {
+    public int charsSegment(Mat input, Vector<Mat> resultVec) {
         if (input.data().isNull())
             return -3;
 
@@ -156,7 +156,7 @@ public class CharsSegment {
                 String str = "image/tmp/debug_char_auxRoi_" + Integer.valueOf(i).toString() + ".jpg";
                 imwrite(str, auxRoi);
             }
-            resultVec.put(auxRoi);
+            resultVec.add(auxRoi);
         }
         return 0;
     }
@@ -366,12 +366,16 @@ public class CharsSegment {
             }
             int aux_i = orderIndex.get(i);
             int aux_min = orderIndex.get(minIdx);
+            orderIndex.remove(i);
             orderIndex.insertElementAt(aux_min, i);
+            orderIndex.remove(minIdx);
             orderIndex.insertElementAt(aux_i, minIdx);
 
             float aux_xi = xpositions.get(i);
             float aux_xmin = xpositions.get(minIdx);
+            xpositions.remove(i);
             xpositions.insertElementAt((int) aux_xmin, i);
+            xpositions.remove(minIdx);
             xpositions.insertElementAt((int) aux_xi, minIdx);
         }
 

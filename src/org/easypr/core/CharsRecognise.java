@@ -1,5 +1,7 @@
 package org.easypr.core;
 
+import java.util.Vector;
+
 import static org.bytedeco.javacpp.opencv_core.*;
 
 /*
@@ -18,7 +20,7 @@ public class CharsRecognise {
     public String charsRecognise(Mat plate)
     {
         //车牌字符方块集合
-        MatVector matVec = new MatVector();
+        Vector<Mat> matVec = new Vector<Mat>();
 
         String plateIdentify = "";
 
