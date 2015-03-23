@@ -1,5 +1,6 @@
 package org.easypr.test;
 
+import org.easypr.core.CharsRecognise;
 import org.easypr.core.PlateDetect;
 
 import java.util.Vector;
@@ -21,7 +22,7 @@ public class Test {
         PlateDetect plateDetect = new PlateDetect();
         plateDetect.setPDLifemode(true);
         Vector<Mat> matVector = new Vector<Mat>();
-        plateDetect.plateDetect(src,matVector);
+        plateDetect.plateDetect(src, matVector);
         if(0==plateDetect.plateDetect(src,matVector)){
             long num = matVector.size();
             for(int i=0;i<num;++i){
@@ -31,6 +32,17 @@ public class Test {
                 }catch (Exception ignore){}
             }
         }
+    }
+
+    public static String charsRecognise(){
+        String imgPath = "res/image/chars_recognise.jpg";
+        System.out.println("test_chars_recognise");
+        Mat src = imread(imgPath);
+        CharsRecognise cr = new CharsRecognise();
+        String result = cr.charsRecognise(src);
+        System.out.println("charsRecognise: "+result);
+
+        return result;
     }
 
 }

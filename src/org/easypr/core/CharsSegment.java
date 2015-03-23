@@ -358,7 +358,7 @@ public class CharsSegment {
         for (int i = 0; i < xpositions.size(); ++i) {
             min = xpositions.get(i);
             minIdx = i;
-            for (int j = i; i < xpositions.size(); ++j) {
+            for (int j = i; j < xpositions.size(); ++j) {
                 if (xpositions.get(j) < min) {
                     min = xpositions.get(j);
                     minIdx = j;
