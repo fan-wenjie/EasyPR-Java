@@ -47,8 +47,9 @@ public class ANNTrain {
     public Mat features(Mat in, int sizeData) {
         //Histogram features
         Features feature = new Features();
-        float[] vhist = feature.ProjectedHistogram(in, VERTICAL);
-        float[] hhist = feature.ProjectedHistogram(in, HORIZONTAL);
+        float[][] hist = feature.ProjectedHistogram(in);
+        float[] vhist = hist[0];
+        float[] hhist = hist[1];
 
         //Low data feature
         Mat lowData = new Mat();
@@ -64,7 +65,7 @@ public class ANNTrain {
             out.ptr(j).put(Convert.getBytes(vhist[i]));
         }
         for (int i = 0; i < hhist.length; i++, ++j) {
-            out.ptr(j).put(Convert.getBytes(vhist[i]));
+            out.ptr(j).put(Convert.getBytes(hhist[i]));
         }
         for (int x = 0; x < lowData.cols(); x++) {
             for (int y = 0; y < lowData.rows(); y++, ++j) {

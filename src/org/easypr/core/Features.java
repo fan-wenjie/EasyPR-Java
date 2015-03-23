@@ -23,6 +23,9 @@ public class Features implements SVMCallback{
             equalizeHist(hsvSplit.get(2), hsvSplit.get(2));
             merge(hsvSplit, hsv);
             cvtColor(hsv, out, CV_HSV2BGR);
+            hsv = null;
+            hsvSplit = null;
+            System.gc();
         } else if (in.channels() == 1) {
             equalizeHist(in, out);
         }
@@ -30,35 +33,37 @@ public class Features implements SVMCallback{
     }
 
     // ！获取垂直和水平方向直方图
-    public float[] ProjectedHistogram(Mat img, int t) {
-        int sz = (t != 0) ? img.rows() : img.cols();
-        //Mat mhist = Mat.zeros(1, sz, CV_32F).asMat();
-        float []nonZero = new float[sz];
-        float max = 0;
-        for (int j = 0; j < sz; j++) {
-            Mat data = (t != 0) ? img.row(j) : img.col(j);
-            nonZero[j] = countNonZero(data);//统计这一行或一列中，非零元素的个数，并保存到mhist中
-            if(max<nonZero[j])
-                max = nonZero[j];
-        }
+    public float[][] ProjectedHistogram(Mat img) {
 
-        //Mat mhist = Mat.zeros(1,sz,CV_32F).asMat();
-        if(max>0)
-            for(int j=0;j<sz;++j){
-                nonZero[j] = nonZero[j]/max;
-            }
-        return nonZero;
+        float []nonZeroHor = new float[img.rows()];
+        float []nonZeroVer = new float[img.cols()];
+        for(int i=0;i<img.rows();++i)
+            for(int j=0;j<img.cols();++j)
+                if(0!=img.ptr(i,j).get()){
+                    ++nonZeroHor[i];
+                    ++nonZeroVer[j];
+                }
+        float [][]out = new float[][]{nonZeroVer,nonZeroHor};
+        for(int i=0;i<2;++i){
+            float max = 0;
+            for(int j=0;j<out[i].length;++j)
+                if(max<out[i][j])
+                    max = out[i][j];
+            if(max>0)
+                for(int j=0;j<out[i].length;++j)
+                    out[i][j]/=max;
+        }
+        return out;
     }
 
 
     //! 获得车牌的特征数
     public Mat getTheFeatures(Mat in) {
-        final int VERTICAL = 0;
-        final int HORIZONTAL = 1;
 
         //Histogram features
-        float[] vhist = ProjectedHistogram(in, VERTICAL);
-        float[] hhist = ProjectedHistogram(in, HORIZONTAL);
+        float [][]hist = ProjectedHistogram(in);
+        float[] vhist = hist[0];
+        float[] hhist = hist[1];
 
         //Last 10 is the number of moments components
         int numCols = vhist.length + hhist.length;
@@ -86,13 +91,21 @@ public class Features implements SVMCallback{
     // ! EasyPR的getFeatures回调函数
 // ！本函数是获取垂直和水平的直方图图值
     @Override
-    public Mat getHistogramFeatures(final Mat image) {
+    public Mat getHistogramFeatures(Mat image) {
         Mat grayImage = new Mat();
         cvtColor(image, grayImage, CV_RGB2GRAY);
+        image = grayImage;
+        grayImage = null;
+        System.gc();
         //grayImage = histeq(grayImage);
         Mat img_threshold = new Mat();
-        threshold(grayImage, img_threshold, 0, 255, CV_THRESH_OTSU + CV_THRESH_BINARY);
-        return getTheFeatures(img_threshold);
+        threshold(image, img_threshold, 0, 255, CV_THRESH_OTSU + CV_THRESH_BINARY);
+        image = img_threshold;
+        img_threshold = null;
+        System.gc();
+        image = getTheFeatures(image);
+        System.gc();
+        return image;
     }
 
 

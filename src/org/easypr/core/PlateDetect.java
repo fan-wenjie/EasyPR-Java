@@ -20,10 +20,12 @@ public class PlateDetect {
     public int plateDetect(Mat src, Vector<Mat> resultVec)
     {
         //可能是车牌的图块集合
-        final Vector<Mat> matVec = new Vector<Mat>();
+        Vector<Mat> matVec = new Vector<Mat>();
         int resultLo = plateLocate.plateLocate(src, matVec);
         if (0 != resultLo)  return -1;
         int resultJu = plateJudge.plateJudge(matVec, resultVec);
+        matVec = null;
+        System.gc();
         if(getPDDebug())
         {
             int size = (int)resultVec.size();
