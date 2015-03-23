@@ -22,7 +22,7 @@ public class Test {
         plateDetect.setPDLifemode(true);
         Vector<Mat> matVector = new Vector<Mat>();
         plateDetect.plateDetect(src,matVector);
-        if(0==plateDetect.plateDetect(src,matVector)){8/
+        if(0==plateDetect.plateDetect(src,matVector)){
             long num = matVector.size();
             for(int i=0;i<num;++i){
                 try {
