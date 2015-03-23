@@ -68,7 +68,7 @@ public class Features implements SVMCallback{
         //Last 10 is the number of moments components
         int numCols = vhist.length + hhist.length;
 
-        Mat out = Mat.zeros(1, numCols, CV_32F).asMat();
+        Mat out = Mat.zeros(1, numCols, CV_32FC1).asMat();
 
         //Asign values to feature,样本特征为水平、垂直直方图
         int j = 0;
@@ -94,18 +94,10 @@ public class Features implements SVMCallback{
     public Mat getHistogramFeatures(Mat image) {
         Mat grayImage = new Mat();
         cvtColor(image, grayImage, CV_RGB2GRAY);
-        image = grayImage;
-        grayImage = null;
-        System.gc();
         //grayImage = histeq(grayImage);
         Mat img_threshold = new Mat();
-        threshold(image, img_threshold, 0, 255, CV_THRESH_OTSU + CV_THRESH_BINARY);
-        image = img_threshold;
-        img_threshold = null;
-        System.gc();
-        image = getTheFeatures(image);
-        System.gc();
-        return image;
+        threshold(grayImage, img_threshold, 0, 255, CV_THRESH_OTSU + CV_THRESH_BINARY);
+        return getTheFeatures(img_threshold);
     }
 
 

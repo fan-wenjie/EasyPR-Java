@@ -51,7 +51,6 @@ public class PlateJudge {
     //! 对单幅图像进行SVM判断
     public int plateJudge(final Mat inMat) {
         Mat features = this.features.getHistogramFeatures(inMat);
-        ///for(int i = 0;i<)
         //通过直方图均衡化后的彩色图进行预测
         //Mat p = features.reshape(1, 1);
         //p.convertTo(p, CV_32FC1);
@@ -64,7 +63,6 @@ public class PlateJudge {
     public int plateJudge(Vector<Mat> inVec, Vector<Mat> resultVec) {
         for (int j = 0; j < inVec.size(); j++) {
             Mat inMat = inVec.get(j);
-            imwrite("tmp"+Integer.valueOf(j).toString()+".jpg",inMat);
             if (1 == plateJudge(inMat))
                 resultVec.add(inMat);
         }

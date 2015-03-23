@@ -21,8 +21,7 @@ public class Test {
         PlateDetect plateDetect = new PlateDetect();
         plateDetect.setPDLifemode(true);
         Vector<Mat> matVector = new Vector<Mat>();
-        System.out.println(plateDetect.plateDetect(src,matVector));
-        /*
+        plateDetect.plateDetect(src,matVector);
         if(0==plateDetect.plateDetect(src,matVector)){8/
             long num = matVector.size();
             for(int i=0;i<num;++i){
@@ -31,8 +30,7 @@ public class Test {
                     System.in.read();
                 }catch (Exception ignore){}
             }
-        }*/
-
+        }
     }
 
 }
