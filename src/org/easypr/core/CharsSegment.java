@@ -75,7 +75,7 @@ public class CharsSegment {
 
 
         if (this.isDebug) {
-            String str = "image/tmp/debug_char_clearLiuDing.jpg";
+            String str = "res/image/tmp/debug_char_clearLiuDing.jpg";
             imwrite(str, img_threshold);
         }
 
@@ -116,7 +116,7 @@ public class CharsSegment {
         if (this.isDebug) {
             if (specIndex < sortedRect.size()) {
                 Mat specMat = new Mat(img_threshold, sortedRect.get(specIndex));
-                String str = "image/tmp/debug_specMat.jpg";
+                String str = "res/image/tmp/debug_specMat.jpg";
                 imwrite(str, specMat);
             }
         }
@@ -132,7 +132,7 @@ public class CharsSegment {
 
         if (this.isDebug) {
             Mat chineseMat = new Mat(img_threshold, chineseRect);
-            String str = "image/tmp/debug_chineseMat.jpg";
+            String str = "res/image/tmp/debug_chineseMat.jpg";
             imwrite(str, chineseMat);
         }
 
