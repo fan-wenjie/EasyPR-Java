@@ -11,6 +11,6 @@ import org.easypr.util.Convert;
 public class Main {
 
     public static void main(String[] args) {
-        Test.charsRecognise();
+        Test.plateDetect();
     }
 }
