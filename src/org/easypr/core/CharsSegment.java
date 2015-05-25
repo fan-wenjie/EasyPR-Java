@@ -1,64 +1,68 @@
 package org.easypr.core;
 
-import org.bytedeco.javacpp.BytePointer;
-import org.easypr.util.Convert;
+import static org.bytedeco.javacpp.opencv_core.CV_32F;
+import static org.bytedeco.javacpp.opencv_core.countNonZero;
+import static org.bytedeco.javacpp.opencv_core.merge;
+import static org.bytedeco.javacpp.opencv_core.split;
+import static org.bytedeco.javacpp.opencv_highgui.imwrite;
+import static org.bytedeco.javacpp.opencv_imgproc.BORDER_CONSTANT;
+import static org.bytedeco.javacpp.opencv_imgproc.CV_BGR2HSV;
+import static org.bytedeco.javacpp.opencv_imgproc.CV_CHAIN_APPROX_NONE;
+import static org.bytedeco.javacpp.opencv_imgproc.CV_HSV2BGR;
+import static org.bytedeco.javacpp.opencv_imgproc.CV_RETR_EXTERNAL;
+import static org.bytedeco.javacpp.opencv_imgproc.CV_RGB2GRAY;
+import static org.bytedeco.javacpp.opencv_imgproc.CV_THRESH_BINARY;
+import static org.bytedeco.javacpp.opencv_imgproc.CV_THRESH_BINARY_INV;
+import static org.bytedeco.javacpp.opencv_imgproc.CV_THRESH_OTSU;
+import static org.bytedeco.javacpp.opencv_imgproc.INTER_LINEAR;
+import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
+import static org.bytedeco.javacpp.opencv_imgproc.cvtColor;
+import static org.bytedeco.javacpp.opencv_imgproc.equalizeHist;
+import static org.bytedeco.javacpp.opencv_imgproc.findContours;
+import static org.bytedeco.javacpp.opencv_imgproc.resize;
+import static org.bytedeco.javacpp.opencv_imgproc.threshold;
+import static org.bytedeco.javacpp.opencv_imgproc.warpAffine;
 
 import java.util.Vector;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
-import static org.bytedeco.javacpp.opencv_highgui.*;
+import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.MatVector;
+import org.bytedeco.javacpp.opencv_core.Rect;
+import org.bytedeco.javacpp.opencv_core.Scalar;
+import org.bytedeco.javacpp.opencv_core.Size;
+import org.easypr.util.Convert;
 
-/*
- * Created by fanwenjie
- * @version 1.1
+
+/**
+ * @author lin.yao
+ *
  */
-
 public class CharsSegment {
-    final static float DEFAULT_BLUEPERCEMT = 0.3f;
-    final static float DEFAULT_WHITEPERCEMT = 0.1f;
 
-    private int liuDingSize;
-    private int theMatWidth;
-    private int colorThreshold;
-    private float bluePercent;
-    private float whitePercent;
-    private boolean isDebug;
-
-    public static final int DEFAULT_LIUDING_SIZE = 7;
-    public static final int DEFAULT_MAT_WIDTH = 136;
-    public static final int DEFAULT_COLORTHRESHOLD = 150;
-    //! 是否开启调试模式常量，默认0代表关闭
-    public static final boolean DEFAULT_DEBUG = false;
-
-    //! preprocessChar所用常量
-    public static final int CHAR_SIZE = 20;
-    public static final int HORIZONTAL = 1;
-    public static final int VERTICAL = 0;
-
-
-    public CharsSegment() {
-        this.liuDingSize = DEFAULT_LIUDING_SIZE;
-        this.theMatWidth = DEFAULT_MAT_WIDTH;
-
-        //！车牌颜色判断参数
-        this.colorThreshold = DEFAULT_COLORTHRESHOLD;
-        this.bluePercent = DEFAULT_BLUEPERCEMT;
-        this.whitePercent = DEFAULT_WHITEPERCEMT;
-
-        this.isDebug = DEFAULT_DEBUG;
-    }
-
-    //! 字符分割
-    public int charsSegment(Mat input, Vector<Mat> resultVec) {
+    /**
+     * 字符分割
+     * 
+     * @param input
+     * @param resultVec
+     * @return 
+     * <ul>
+     * <li>more than zero: the number of chars; 
+     * <li>-3: null;
+     */
+    public int charsSegment(final Mat input, Vector<Mat> resultVec) {
         if (input.data().isNull())
             return -3;
 
-        //判断车牌颜色以此确认threshold方法
-        int plateType = getPlateType(input);
-        cvtColor(input, input, CV_RGB2GRAY);
+        // 判断车牌颜色以此确认threshold方法
+        int w = input.cols();
+        int h = input.rows();
+        Mat tmpMat = new Mat(input, new Rect((int)(w*0.1),(int)(h*0.1),(int)(w*0.8),(int)(h*0.8)));
+        int plateType = getPlateType(tmpMat); //TODO
+        
+        Mat input_grey = new Mat();
+        cvtColor(input, input_grey, CV_RGB2GRAY);
 
-        //Threshold input image
         Mat img_threshold = new Mat();
         if (1 == plateType)
             threshold(input, img_threshold, 10, 255, CV_THRESH_OTSU + CV_THRESH_BINARY);
@@ -70,9 +74,8 @@ public class CharsSegment {
             imwrite(str, img_threshold);
         }
 
-        //去除车牌上方的柳钉以及下方的横线等干扰
+        // 去除车牌上方的柳钉以及下方的横线等干扰
         clearLiuDing(img_threshold);
-
 
         if (this.isDebug) {
             String str = "res/image/tmp/debug_char_clearLiuDing.jpg";
@@ -84,16 +87,14 @@ public class CharsSegment {
 
         MatVector contours = new MatVector();
 
-        findContours(img_contours,
-                contours, // a vector of contours
+        findContours(img_contours, contours, // a vector of contours
                 CV_RETR_EXTERNAL, // retrieve the external contours
                 CV_CHAIN_APPROX_NONE); // all pixels of each contours
 
-        //Start to iterate to each contour founded
+        // Start to iterate to each contour founded
 
-
-        //Remove patch that are no inside limits of aspect ratio and area.
-        //将不符合特定尺寸的图块排除出去
+        // Remove patch that are no inside limits of aspect ratio and area.
+        // 将不符合特定尺寸的图块排除出去
         Vector<Rect> vecRect = new Vector<Rect>();
         for (int i = 0; i < contours.size(); ++i) {
             Rect mr = boundingRect(contours.get(i));
@@ -101,16 +102,15 @@ public class CharsSegment {
                 vecRect.add(mr);
         }
 
-
         if (vecRect.size() == 0)
             return -3;
 
         Vector<Rect> sortedRect = new Vector<Rect>();
-        //对符合尺寸的图块按照从左到右进行排序
+        // 对符合尺寸的图块按照从左到右进行排序
         SortRect(vecRect, sortedRect);
 
         int specIndex = 0;
-        //获得指示城市的特定Rect,如苏A的"A"
+        // 获得指示城市的特定Rect,如苏A的"A"
         specIndex = GetSpecificRect(sortedRect);
 
         if (this.isDebug) {
@@ -121,9 +121,9 @@ public class CharsSegment {
             }
         }
 
-        //根据特定Rect向左反推出中文字符
-        //这样做的主要原因是根据findContours方法很难捕捉到中文字符的准确Rect，因此仅能
-        //退过特定算法来指定
+        // 根据特定Rect向左反推出中文字符
+        // 这样做的主要原因是根据findContours方法很难捕捉到中文字符的准确Rect，因此仅能
+        // 退过特定算法来指定
         Rect chineseRect = new Rect();
         if (specIndex < sortedRect.size())
             chineseRect = GetChineseRect(sortedRect.get(specIndex));
@@ -136,10 +136,9 @@ public class CharsSegment {
             imwrite(str, chineseMat);
         }
 
-
-        //新建一个全新的排序Rect
-        //将中文字符Rect第一个加进来，因为它肯定是最左边的
-        //其余的Rect只按照顺序去6个，车牌只可能是7个字符！这样可以避免阴影导致的“1”字符
+        // 新建一个全新的排序Rect
+        // 将中文字符Rect第一个加进来，因为它肯定是最左边的
+        // 其余的Rect只按照顺序去6个，车牌只可能是7个字符！这样可以避免阴影导致的“1”字符
         Vector<Rect> newSortedRect = new Vector<Rect>();
         newSortedRect.add(chineseRect);
         RebuildRect(sortedRect, newSortedRect, specIndex);
@@ -416,4 +415,27 @@ public class CharsSegment {
     public void setDebug(boolean isDebug) {
         this.isDebug = isDebug;
     }
+
+    // 是否开启调试模式常量，默认false代表关闭
+    final static boolean DEFAULT_DEBUG = false;
+
+    // preprocessChar所用常量
+    final static int CHAR_SIZE = 20;
+    final static int HORIZONTAL = 1;
+    final static int VERTICAL = 0;
+
+    final static int DEFAULT_LIUDING_SIZE = 7;
+    final static int DEFAULT_MAT_WIDTH = 136;
+    final static int DEFAULT_COLORTHRESHOLD = 150;
+    final static float DEFAULT_BLUEPERCEMT = 0.3f;
+    final static float DEFAULT_WHITEPERCEMT = 0.1f;
+
+    private int liuDingSize = DEFAULT_LIUDING_SIZE;
+    private int theMatWidth = DEFAULT_MAT_WIDTH;
+    
+    private int colorThreshold = DEFAULT_COLORTHRESHOLD;
+    private float bluePercent = DEFAULT_BLUEPERCEMT;
+    private float whitePercent = DEFAULT_WHITEPERCEMT;
+    
+    private boolean isDebug = DEFAULT_DEBUG;
 }
