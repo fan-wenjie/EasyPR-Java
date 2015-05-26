@@ -164,8 +164,13 @@ public class CharsSegment {
         return 0;
     }
 
-    //! 字符尺寸验证
-    public Boolean verifySizes(Mat r) {
+    /**
+     * 字符尺寸验证
+     * 
+     * @param r
+     * @return
+     */
+    private Boolean verifySizes(Mat r) {
         float aspect = 45.0f / 90.0f;
         float charAspect = (float) r.cols() / (float) r.rows();
         float error = 0.7f;
@@ -184,26 +189,42 @@ public class CharsSegment {
         return  percPixels <= 1 && charAspect > minAspect && charAspect < maxAspect && r.rows() >= minHeight && r.rows() < maxHeight;
     }
 
-    //! 字符预处理
-    public Mat preprocessChar(Mat in) {
+    /**
+     * 字符预处理: 统一每个字符的大小
+     * 
+     * @param in
+     * @return
+     */
+    private Mat preprocessChar(Mat in) {
         //Remap image
         int h = in.rows();
         int w = in.cols();
-        int charSize = CHAR_SIZE;    //统一每个字符的大小
+        int charSize = CHAR_SIZE;
         Mat transformMat = Mat.eye(2, 3, CV_32F).asMat();
-        int m = (w > h) ? w : h;
+        int m = Math.max(w, h);
         transformMat.ptr(0,2).put(Convert.getBytes(((m-w) / 2f)));
         transformMat.ptr(1,2).put(Convert.getBytes((m-h)/2f));
+        
         Mat warpImage = new Mat(m, m, in.type());
         warpAffine(in, warpImage, transformMat, warpImage.size(), INTER_LINEAR, BORDER_CONSTANT, new Scalar(0));
+        
         Mat out = new Mat();
         resize(warpImage, out, new Size(charSize, charSize));
+        
         return out;
     }
 
-    //! 去除影响字符识别的柳钉
-    public Mat clearLiuDing(Mat img) {
+    /**
+     * 去除车牌上方的钮钉
+     * <p>
+     * 计算每行元素的阶跃数，如果小于X认为是柳丁，将此行全部填0（涂黑）， X可根据实际调整
+     * 
+     * @param img
+     * @return
+     */
+    private Mat clearLiuDing(Mat img) {
         final int x = this.liuDingSize;
+        
         Mat jump = Mat.zeros(1, img.rows(), CV_32F).asMat();
         for (int i = 0; i < img.rows(); i++) {
             int jumpCount = 0;
@@ -211,11 +232,10 @@ public class CharsSegment {
                 if (img.ptr(i, j).get() != img.ptr(i, j + 1).get())
                     jumpCount++;
             }
-            jump.ptr(i).put(Convert.getBytes((float)jumpCount));
+            jump.ptr(i).put(Convert.getBytes((float) jumpCount));
         }
         for (int i = 0; i < img.rows(); i++) {
-
-            if (Convert.toFloat(jump.ptr(i))<=x){
+            if (Convert.toFloat(jump.ptr(i)) <= x) {
                 for (int j = 0; j < img.cols(); j++) {
                     img.ptr(i, j).put((byte) 0);
                 }
@@ -223,7 +243,6 @@ public class CharsSegment {
         }
         return img;
     }
-
 
     //! 根据特殊车牌来构造猜测中文字符的位置和大小
     public Rect GetChineseRect(final Rect rectSpe) {

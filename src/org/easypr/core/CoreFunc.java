@@ -92,9 +92,9 @@ public class CoreFunc {
         for (int i = 0; i < nRows; ++i) {
             BytePointer p = src_hsv.ptr(i);
             for (int j = 0; j < nCols; j += 3) {
-                int H = p.get(j);
-                int S = p.get(j + 1);
-                int V = p.get(j + 2);
+                int H = p.get(j) & 0xFF;
+                int S = p.get(j + 1) & 0xFF;
+                int V = p.get(j + 2) & 0xFF;
 
                 boolean colorMatched = false;
 
@@ -113,7 +113,7 @@ public class CoreFunc {
                     else
                         min_sv = minabs_sv;
 
-                    if ((S > min_sv && S < max_sv) && (V > min_sv && V < max_sv))
+                    if ((S > min_sv && S <= max_sv) && (V > min_sv && V <= max_sv))
                         colorMatched = true;
                 }
 
@@ -154,7 +154,7 @@ public class CoreFunc {
      */
     public static boolean plateColorJudge(final Mat src, final Color color, final boolean adaptive_minsv) {
         // 判断阈值
-        final float thresh = 0.2f;
+        final float thresh = 0.49f;
 
         Mat gray = colorMatch(src, color, adaptive_minsv);
 
