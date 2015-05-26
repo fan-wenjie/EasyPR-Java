@@ -2,13 +2,9 @@ package org.easypr.core;
 
 import static org.bytedeco.javacpp.opencv_core.CV_32F;
 import static org.bytedeco.javacpp.opencv_core.countNonZero;
-import static org.bytedeco.javacpp.opencv_core.merge;
-import static org.bytedeco.javacpp.opencv_core.split;
 import static org.bytedeco.javacpp.opencv_highgui.imwrite;
 import static org.bytedeco.javacpp.opencv_imgproc.BORDER_CONSTANT;
-import static org.bytedeco.javacpp.opencv_imgproc.CV_BGR2HSV;
 import static org.bytedeco.javacpp.opencv_imgproc.CV_CHAIN_APPROX_NONE;
-import static org.bytedeco.javacpp.opencv_imgproc.CV_HSV2BGR;
 import static org.bytedeco.javacpp.opencv_imgproc.CV_RETR_EXTERNAL;
 import static org.bytedeco.javacpp.opencv_imgproc.CV_RGB2GRAY;
 import static org.bytedeco.javacpp.opencv_imgproc.CV_THRESH_BINARY;
@@ -17,15 +13,14 @@ import static org.bytedeco.javacpp.opencv_imgproc.CV_THRESH_OTSU;
 import static org.bytedeco.javacpp.opencv_imgproc.INTER_LINEAR;
 import static org.bytedeco.javacpp.opencv_imgproc.boundingRect;
 import static org.bytedeco.javacpp.opencv_imgproc.cvtColor;
-import static org.bytedeco.javacpp.opencv_imgproc.equalizeHist;
 import static org.bytedeco.javacpp.opencv_imgproc.findContours;
 import static org.bytedeco.javacpp.opencv_imgproc.resize;
 import static org.bytedeco.javacpp.opencv_imgproc.threshold;
 import static org.bytedeco.javacpp.opencv_imgproc.warpAffine;
+import static org.easypr.core.CoreFunc.getPlateType;
 
 import java.util.Vector;
 
-import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Rect;
@@ -49,29 +44,38 @@ public class CharsSegment {
      * <ul>
      * <li>more than zero: the number of chars; 
      * <li>-3: null;
+     * </ul>
      */
     public int charsSegment(final Mat input, Vector<Mat> resultVec) {
         if (input.data().isNull())
             return -3;
 
         // 判断车牌颜色以此确认threshold方法
-        int w = input.cols();
-        int h = input.rows();
-        Mat tmpMat = new Mat(input, new Rect((int)(w*0.1),(int)(h*0.1),(int)(w*0.8),(int)(h*0.8)));
-        int plateType = getPlateType(tmpMat); //TODO
-        
+
+        Mat img_threshold = new Mat();
+
         Mat input_grey = new Mat();
         cvtColor(input, input_grey, CV_RGB2GRAY);
 
-        Mat img_threshold = new Mat();
-        if (1 == plateType)
-            threshold(input, img_threshold, 10, 255, CV_THRESH_OTSU + CV_THRESH_BINARY);
-        else
-            threshold(input, img_threshold, 10, 255, CV_THRESH_OTSU + CV_THRESH_BINARY_INV);
+        int w = input.cols();
+        int h = input.rows();
+        Mat tmpMat = new Mat(input, new Rect((int) (w * 0.1), (int) (h * 0.1), (int) (w * 0.8), (int) (h * 0.8)));
+
+        switch (getPlateType(tmpMat, true)) {
+        case BLUE:
+            threshold(input_grey, img_threshold, 10, 255, CV_THRESH_OTSU + CV_THRESH_BINARY);
+            break;
+
+        case YELLOW:
+            threshold(input_grey, img_threshold, 10, 255, CV_THRESH_OTSU + CV_THRESH_BINARY_INV);
+            break;
+
+        default:
+            return -3;
+        }
 
         if (this.isDebug) {
-            String str = "image/tmp/debug_char_threshold.jpg";
-            imwrite(str, img_threshold);
+            imwrite("res/image/tmp/debug_char_threshold.jpg", img_threshold);
         }
 
         // 去除车牌上方的柳钉以及下方的横线等干扰
@@ -82,6 +86,7 @@ public class CharsSegment {
             imwrite(str, img_threshold);
         }
 
+        // 找轮廓
         Mat img_contours = new Mat();
         img_threshold.copyTo(img_contours);
 
@@ -109,9 +114,8 @@ public class CharsSegment {
         // 对符合尺寸的图块按照从左到右进行排序
         SortRect(vecRect, sortedRect);
 
-        int specIndex = 0;
         // 获得指示城市的特定Rect,如苏A的"A"
-        specIndex = GetSpecificRect(sortedRect);
+        int specIndex = GetSpecificRect(sortedRect);
 
         if (this.isDebug) {
             if (specIndex < sortedRect.size()) {
@@ -152,7 +156,7 @@ public class CharsSegment {
 
             auxRoi = preprocessChar(auxRoi);
             if (this.isDebug) {
-                String str = "image/tmp/debug_char_auxRoi_" + Integer.valueOf(i).toString() + ".jpg";
+                String str = "res/image/tmp/debug_char_auxRoi_" + Integer.valueOf(i).toString() + ".jpg";
                 imwrite(str, auxRoi);
             }
             resultVec.add(auxRoi);
@@ -195,66 +199,6 @@ public class CharsSegment {
         Mat out = new Mat();
         resize(warpImage, out, new Size(charSize, charSize));
         return out;
-    }
-/*
-    //! 生成直方图
-    public Mat ProjectedHistogram(Mat img, int t) {
-        return null;
-    }
-
-    //! 生成字符的特定特征
-    public Mat features(Mat in, int sizeData) {
-        return null;
-    }*/
-
-    //! 直方图均衡，为判断车牌颜色做准备
-    public Mat histeq(Mat in) {
-        Mat out = new Mat(in.size(), in.type());
-        if (in.channels() == 3) {
-            Mat hsv = new Mat();
-            MatVector hsvSplit = new MatVector();
-            cvtColor(in, hsv, CV_BGR2HSV);
-            split(hsv, hsvSplit);
-            equalizeHist(hsvSplit.get(2), hsvSplit.get(2));
-            merge(hsvSplit, hsv);
-            cvtColor(hsv, out, CV_HSV2BGR);
-        } else if (in.channels() == 1) {
-            equalizeHist(in, out);
-        }
-        return out;
-    }
-
-    //! 获得车牌颜色
-    public int getPlateType(Mat input) {
-        Mat img = new Mat();
-        input.copyTo(img);
-        img = histeq(img);
-
-        double countBlue = 0;
-        double countWhite = 0;
-
-        int nums = img.rows() * img.cols();
-        for (int i = 0; i < img.rows(); i++) {
-            for (int j = 0; j < img.cols(); j++) {
-                BytePointer pointer = img.ptr(i, j);
-                int blue = pointer.get(0) & 0xFF;
-                int green = pointer.get(1) & 0xFF;
-                int red = pointer.get(2) & 0xFF;
-
-                if (blue > this.colorThreshold && green > 10 && red > 10)
-                    countBlue++;
-                if (blue > this.colorThreshold && green > this.colorThreshold && red > this.colorThreshold)
-                    countWhite++;
-            }
-        }
-
-        double percentBlue = countBlue / nums;
-        double percentWhite = countWhite / nums;
-
-        if (percentBlue - this.bluePercent > 0 && percentWhite - this.whitePercent > 0)
-            return 1;
-        else
-            return 2;
     }
 
     //! 去除影响字符识别的柳钉
@@ -426,6 +370,7 @@ public class CharsSegment {
 
     final static int DEFAULT_LIUDING_SIZE = 7;
     final static int DEFAULT_MAT_WIDTH = 136;
+    
     final static int DEFAULT_COLORTHRESHOLD = 150;
     final static float DEFAULT_BLUEPERCEMT = 0.3f;
     final static float DEFAULT_WHITEPERCEMT = 0.1f;

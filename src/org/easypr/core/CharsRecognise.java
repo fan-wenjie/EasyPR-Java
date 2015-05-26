@@ -3,6 +3,7 @@ package org.easypr.core;
 import java.util.Vector;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.easypr.core.CoreFunc.Color;
 
 /**
  * @author lin.yao
@@ -67,10 +68,10 @@ public class CharsRecognise {
      */
     public final String getPlateType(final Mat input) {
         String color = "未知";
-        int result = charsSegment.getPlateType(input);
-        if (1 == result)
+        Color result = CoreFunc.getPlateType(input, true);
+        if (Color.BLUE == result)
             color = "蓝牌";
-        if (2 == result)
+        if (Color.YELLOW == result)
             color = "黄牌";
         return color;
     }
