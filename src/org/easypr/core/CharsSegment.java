@@ -28,10 +28,9 @@ import org.bytedeco.javacpp.opencv_core.Scalar;
 import org.bytedeco.javacpp.opencv_core.Size;
 import org.easypr.util.Convert;
 
-
 /**
  * @author lin.yao
- *
+ * 
  */
 public class CharsSegment {
 
@@ -40,11 +39,10 @@ public class CharsSegment {
      * 
      * @param input
      * @param resultVec
-     * @return 
-     * <ul>
-     * <li>more than zero: the number of chars; 
-     * <li>-3: null;
-     * </ul>
+     * @return <ul>
+     *         <li>more than zero: the number of chars;
+     *         <li>-3: null;
+     *         </ul>
      */
     public int charsSegment(final Mat input, Vector<Mat> resultVec) {
         if (input.data().isNull())
@@ -75,14 +73,14 @@ public class CharsSegment {
         }
 
         if (this.isDebug) {
-            imwrite("res/image/tmp/debug_char_threshold.jpg", img_threshold);
+            imwrite("tmp/debug_char_threshold.jpg", img_threshold);
         }
 
         // 去除车牌上方的柳钉以及下方的横线等干扰
         clearLiuDing(img_threshold);
 
         if (this.isDebug) {
-            String str = "res/image/tmp/debug_char_clearLiuDing.jpg";
+            String str = "tmp/debug_char_clearLiuDing.jpg";
             imwrite(str, img_threshold);
         }
 
@@ -120,7 +118,7 @@ public class CharsSegment {
         if (this.isDebug) {
             if (specIndex < sortedRect.size()) {
                 Mat specMat = new Mat(img_threshold, sortedRect.get(specIndex));
-                String str = "res/image/tmp/debug_specMat.jpg";
+                String str = "tmp/debug_specMat.jpg";
                 imwrite(str, specMat);
             }
         }
@@ -136,7 +134,7 @@ public class CharsSegment {
 
         if (this.isDebug) {
             Mat chineseMat = new Mat(img_threshold, chineseRect);
-            String str = "res/image/tmp/debug_chineseMat.jpg";
+            String str = "tmp/debug_chineseMat.jpg";
             imwrite(str, chineseMat);
         }
 
@@ -156,7 +154,7 @@ public class CharsSegment {
 
             auxRoi = preprocessChar(auxRoi);
             if (this.isDebug) {
-                String str = "res/image/tmp/debug_char_auxRoi_" + Integer.valueOf(i).toString() + ".jpg";
+                String str = "tmp/debug_char_auxRoi_" + Integer.valueOf(i).toString() + ".jpg";
                 imwrite(str, auxRoi);
             }
             resultVec.add(auxRoi);
@@ -176,17 +174,18 @@ public class CharsSegment {
         float error = 0.7f;
         float minHeight = 10f;
         float maxHeight = 35f;
-        //We have a different aspect ratio for number 1, and it can be ~0.2
+        // We have a different aspect ratio for number 1, and it can be ~0.2
         float minAspect = 0.05f;
         float maxAspect = aspect + aspect * error;
-        //area of pixels
+        // area of pixels
         float area = countNonZero(r);
-        //bb area
+        // bb area
         float bbArea = r.cols() * r.rows();
-        //% of pixel in area
+        // % of pixel in area
         float percPixels = area / bbArea;
 
-        return  percPixels <= 1 && charAspect > minAspect && charAspect < maxAspect && r.rows() >= minHeight && r.rows() < maxHeight;
+        return percPixels <= 1 && charAspect > minAspect && charAspect < maxAspect && r.rows() >= minHeight
+                && r.rows() < maxHeight;
     }
 
     /**
@@ -196,21 +195,20 @@ public class CharsSegment {
      * @return
      */
     private Mat preprocessChar(Mat in) {
-        //Remap image
         int h = in.rows();
         int w = in.cols();
         int charSize = CHAR_SIZE;
         Mat transformMat = Mat.eye(2, 3, CV_32F).asMat();
         int m = Math.max(w, h);
-        transformMat.ptr(0,2).put(Convert.getBytes(((m-w) / 2f)));
-        transformMat.ptr(1,2).put(Convert.getBytes((m-h)/2f));
-        
+        transformMat.ptr(0, 2).put(Convert.getBytes(((m - w) / 2f)));
+        transformMat.ptr(1, 2).put(Convert.getBytes((m - h) / 2f));
+
         Mat warpImage = new Mat(m, m, in.type());
         warpAffine(in, warpImage, transformMat, warpImage.size(), INTER_LINEAR, BORDER_CONSTANT, new Scalar(0));
-        
+
         Mat out = new Mat();
         resize(warpImage, out, new Size(charSize, charSize));
-        
+
         return out;
     }
 
@@ -224,7 +222,7 @@ public class CharsSegment {
      */
     private Mat clearLiuDing(Mat img) {
         final int x = this.liuDingSize;
-        
+
         Mat jump = Mat.zeros(1, img.rows(), CV_32F).asMat();
         for (int i = 0; i < img.rows(); i++) {
             int jumpCount = 0;
@@ -244,21 +242,31 @@ public class CharsSegment {
         return img;
     }
 
-    //! 根据特殊车牌来构造猜测中文字符的位置和大小
-    public Rect GetChineseRect(final Rect rectSpe) {
+    /**
+     * 根据特殊车牌来构造猜测中文字符的位置和大小
+     * 
+     * @param rectSpe
+     * @return
+     */
+    private Rect GetChineseRect(final Rect rectSpe) {
         int height = rectSpe.height();
         float newwidth = rectSpe.width() * 1.15f;
         int x = rectSpe.x();
         int y = rectSpe.y();
 
         int newx = x - (int) (newwidth * 1.15);
-        newx = newx > 0 ? newx : 0;
+        newx = Math.max(newx, 0);
         Rect a = new Rect(newx, y, (int) newwidth, height);
         return a;
     }
 
-    //! 找出指示城市的字符的Rect，例如苏A7003X，就是A的位置
-    public int GetSpecificRect(final Vector<Rect> vecRect) {
+    /**
+     * 找出指示城市的字符的Rect，例如苏A7003X，就是A的位置
+     * 
+     * @param vecRect
+     * @return
+     */
+    private int GetSpecificRect(final Vector<Rect> vecRect) {
         Vector<Integer> xpositions = new Vector<Integer>();
         int maxHeight = 0;
         int maxWidth = 0;
@@ -278,9 +286,9 @@ public class CharsSegment {
             Rect mr = vecRect.get(i);
             int midx = mr.x() + mr.width() / 2;
 
-            //如果一个字符有一定的大小，并且在整个车牌的1/7到2/7之间，则是我们要找的特殊车牌
-            if ((mr.width() > maxWidth * 0.8 || mr.height() > maxHeight * 0.8) &&
-                    (midx < this.theMatWidth * 2 / 7 && midx > this.theMatWidth / 7)) {
+            // 如果一个字符有一定的大小，并且在整个车牌的1/7到2/7之间，则是我们要找的特殊车牌
+            if ((mr.width() > maxWidth * 0.8 || mr.height() > maxHeight * 0.8)
+                    && (midx < this.theMatWidth * 2 / 7 && midx > this.theMatWidth / 7)) {
                 specIndex = i;
             }
         }
@@ -288,14 +296,23 @@ public class CharsSegment {
         return specIndex;
     }
 
-    //! 这个函数做两个事情
-    //  1.把特殊字符Rect左边的全部Rect去掉，后面再重建中文字符的位置。
-    //  2.从特殊字符Rect开始，依次选择6个Rect，多余的舍去。
-    public int RebuildRect(final Vector<Rect> vecRect, Vector<Rect> outRect, int specIndex) {
-        //最大只能有7个Rect,减去中文的就只有6个Rect
+    /**
+     * 这个函数做两个事情
+     * <ul>
+     * <li>把特殊字符Rect左边的全部Rect去掉，后面再重建中文字符的位置;
+     * <li>从特殊字符Rect开始，依次选择6个Rect，多余的舍去。
+     * <ul>
+     * 
+     * @param vecRect
+     * @param outRect
+     * @param specIndex
+     * @return
+     */
+    private int RebuildRect(final Vector<Rect> vecRect, Vector<Rect> outRect, int specIndex) {
+        // 最大只能有7个Rect,减去中文的就只有6个Rect
         int count = 6;
         for (int i = 0; i < vecRect.size(); i++) {
-            //将特殊字符左边的Rect去掉，这个可能会去掉中文Rect，不过没关系，我们后面会重建。
+            // 将特殊字符左边的Rect去掉，这个可能会去掉中文Rect，不过没关系，我们后面会重建。
             if (i < specIndex)
                 continue;
 
@@ -303,11 +320,18 @@ public class CharsSegment {
             if (--count == 0)
                 break;
         }
+
         return 0;
     }
 
-    //! 将Rect按位置从左到右进行排序
-    int SortRect(final Vector<Rect> vecRect, Vector<Rect> out) {
+    /**
+     * 将Rect按位置从左到右进行排序
+     * 
+     * @param vecRect
+     * @param out
+     * @return
+     */
+    private void SortRect(final Vector<Rect> vecRect, Vector<Rect> out) {
         Vector<Integer> orderIndex = new Vector<Integer>();
         Vector<Integer> xpositions = new Vector<Integer>();
         for (int i = 0; i < vecRect.size(); ++i) {
@@ -343,10 +367,10 @@ public class CharsSegment {
 
         for (int i = 0; i < orderIndex.size(); i++)
             out.add(vecRect.get(orderIndex.get(i)));
-        return 0;
+
+        return;
     }
 
-    //! 设置变量
     public void setLiuDingSize(int param) {
         this.liuDingSize = param;
     }
@@ -389,17 +413,17 @@ public class CharsSegment {
 
     final static int DEFAULT_LIUDING_SIZE = 7;
     final static int DEFAULT_MAT_WIDTH = 136;
-    
+
     final static int DEFAULT_COLORTHRESHOLD = 150;
     final static float DEFAULT_BLUEPERCEMT = 0.3f;
     final static float DEFAULT_WHITEPERCEMT = 0.1f;
 
     private int liuDingSize = DEFAULT_LIUDING_SIZE;
     private int theMatWidth = DEFAULT_MAT_WIDTH;
-    
+
     private int colorThreshold = DEFAULT_COLORTHRESHOLD;
     private float bluePercent = DEFAULT_BLUEPERCEMT;
     private float whitePercent = DEFAULT_WHITEPERCEMT;
-    
+
     private boolean isDebug = DEFAULT_DEBUG;
 }

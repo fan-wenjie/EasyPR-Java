@@ -1,7 +1,11 @@
-#eclipse settings
+# eclipse settings
 *.prefs
 
+# generated class files
 *.class
+
+# debug files
+tmp/*
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/

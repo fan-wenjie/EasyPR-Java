@@ -39,7 +39,7 @@ public class EasyPrTest {
 
     @Test
     public void testCharsRecognise() {
-        String imgPath = "res/image/chars_segment.jpg";
+        String imgPath = "res/image/test_chars_segment/chars_segment.jpg";
 
         Mat src = imread(imgPath);
         CharsRecognise cr = new CharsRecognise();
