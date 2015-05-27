@@ -34,7 +34,7 @@ public class CharsRecognise {
             for (int j = 0; j < matVec.size(); j++) {
                 Mat charMat = matVec.get(j);
                 // the first is Chinese char as default 默认首个字符块是中文字符
-                String charcater = charsIdentify.charsIdentify(charMat, (0 == j));
+                String charcater = charsIdentify.charsIdentify(charMat, (0 == j), (1 == j));
                 plateIdentify = plateIdentify + charcater;
             }
         }
