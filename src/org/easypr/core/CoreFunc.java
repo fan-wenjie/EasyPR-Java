@@ -1,18 +1,19 @@
 package org.easypr.core;
 
-import static org.bytedeco.javacpp.opencv_core.countNonZero;
-import static org.bytedeco.javacpp.opencv_core.merge;
-import static org.bytedeco.javacpp.opencv_core.split;
+import static org.bytedeco.javacpp.opencv_core.*;
 import static org.bytedeco.javacpp.opencv_highgui.cvShowImage;
 import static org.bytedeco.javacpp.opencv_highgui.cvWaitKey;
 import static org.bytedeco.javacpp.opencv_imgproc.CV_BGR2HSV;
 import static org.bytedeco.javacpp.opencv_imgproc.cvtColor;
 import static org.bytedeco.javacpp.opencv_imgproc.equalizeHist;
+import static org.bytedeco.javacpp.opencv_imgproc.resize;
 
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.opencv_core.IplImage;
 import org.bytedeco.javacpp.opencv_core.Mat;
 import org.bytedeco.javacpp.opencv_core.MatVector;
+import org.bytedeco.javacpp.opencv_core.Size;
+import org.bytedeco.javacpp.indexer.FloatIndexer;
 
 /**
  * @author lin.yao
@@ -22,7 +23,7 @@ public class CoreFunc {
     public enum Color {
         UNKNOWN, BLUE, YELLOW
     };
-    
+
     public enum Direction {
         UNKNOWN, VERTICAL, HORIZONTAL
     }
@@ -188,78 +189,98 @@ public class CoreFunc {
             return Color.UNKNOWN;
         }
     }
-    
-//    Mat features(Mat in, int sizeData){
-//        //Histogram features
-//        Mat vhist=ProjectedHistogram(in,VERTICAL);
-//        Mat hhist=ProjectedHistogram(in,HORIZONTAL);
-//
-//        //Low data feature
-//        Mat lowData;
-//        resize(in, lowData, Size(sizeData, sizeData) );
-//
-//        //Last 10 is the number of moments components
-//        int numCols=vhist.cols+hhist.cols+lowData.cols*lowData.cols;
-//
-//        Mat out=Mat::zeros(1,numCols,CV_32F);
-//        //Asign values to feature,ANN的样本特征为水平、垂直直方图和低分辨率图像所组成的矢量
-//        int j=0;
-//        for(int i=0; i<vhist.cols; i++)
-//        {
-//            out.at<float>(j)=vhist.at<float>(i);
-//            j++;
-//        }
-//        for(int i=0; i<hhist.cols; i++)
-//        {
-//            out.at<float>(j)=hhist.at<float>(i);
-//            j++;
-//        }
-//        for(int x=0; x<lowData.cols; x++)
-//        {
-//            for(int y=0; y<lowData.rows; y++){
-//                out.at<float>(j)=(float)lowData.at<unsigned char>(x,y);
-//                j++;
-//            }
-//        }
-//        
-//        return out;
-//    }
-    
- // ！获取垂直和水平方向直方图
-    Mat ProjectedHistogram(Mat img, Direction t)
-    {
+
+    /**
+     * 获取垂直或水平方向直方图
+     * 
+     * @param img
+     * @param direction
+     * @return
+     */
+    public static float[] projectedHistogram(final Mat img, Direction direction) {
         int sz = 0;
-        switch (t) {
-        case VERTICAL:
-            sz = img.cols();
-            break;
-            
+        switch (direction) {
         case HORIZONTAL:
             sz = img.rows();
             break;
-            
+
+        case VERTICAL:
+            sz = img.cols();
+            break;
+
         default:
             break;
         }
 
-        Mat mhist = zeros(1, sz, CV_32F);
-
-        for (int j = 0; j<sz; j++){
-            Mat data = (t) ? img.row(j) : img.col(j);
-
-            mhist.at<float>(j) =countNonZero(data); //统计这一行或一列中，非零元素的个数，并保存到mhist中
+        // 统计这一行或一列中，非零元素的个数，并保存到nonZeroMat中
+        float[] nonZeroMat = new float[sz];
+        extractChannel(img, img, 0);
+        for (int j = 0; j < sz; j++) {
+            Mat data = (direction == Direction.HORIZONTAL) ? img.row(j) : img.col(j);
+            int count = countNonZero(data);
+            nonZeroMat[j] = count;
         }
 
-        //Normalize histogram
-        double min, max;
-        minMaxLoc(mhist, &min, &max);
+        // Normalize histogram
+        float max = 0;
+        for (int j = 0; j < nonZeroMat.length; ++j) {
+            max = Math.max(max, nonZeroMat[j]);
+        }
 
-        if (max>0)
-            mhist.convertTo(mhist, -1, 1.0f / max, 0);//用mhist直方图中的最大值，归一化直方图
+        if (max > 0) {
+            for (int j = 0; j < nonZeroMat.length; ++j) {
+                nonZeroMat[j] /= max;
+            }
+        }
 
-        return mhist;
+        return nonZeroMat;
     }
 
+    /**
+     * Asign values to feature
+     * <p>
+     * ANN的样本特征为水平、垂直直方图和低分辨率图像所组成的矢量
+     * 
+     * @param in
+     * @param sizeData
+     *            低分辨率图像size = sizeData*sizeData
+     * @return
+     */
+    public static Mat features(final Mat in, final int sizeData) {
+
+        float[] vhist = projectedHistogram(in, Direction.VERTICAL);
+        float[] hhist = projectedHistogram(in, Direction.HORIZONTAL);
+
+        Mat lowData = new Mat();
+        resize(in, lowData, new Size(sizeData, sizeData));
+
+        int numCols = vhist.length + hhist.length + lowData.cols() * lowData.rows();
+        Mat out = Mat.zeros(1, numCols, CV_32F).asMat();
+        FloatIndexer idx = out.createIndexer();
+
+        int j = 0;
+        for (int i = 0; i < vhist.length; ++i, ++j) {
+            idx.put(0, j, vhist[i]);
+        }
+        for (int i = 0; i < hhist.length; ++i, ++j) {
+            idx.put(0, j, hhist[i]);
+        }
+        for (int x = 0; x < lowData.cols(); x++) {
+            for (int y = 0; y < lowData.rows(); y++, ++j) {
+                float val = lowData.ptr(x, y).get() & 0xFF;
+                idx.put(0, j, val);
+            }
+        }
+
+        return out;
+    }
+
+    /**
+     * Show image
+     * 
+     * @param title
+     * @param src
+     */
     public static void showImage(final String title, final Mat src) {
         try {
             IplImage image = src.asIplImage();
