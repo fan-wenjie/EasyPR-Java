@@ -4,6 +4,7 @@ import static org.bytedeco.javacpp.opencv_highgui.imread;
 import static org.bytedeco.javacpp.opencv_highgui.imshow;
 import static org.easypr.core.CoreFunc.getPlateType;
 import static org.easypr.core.CoreFunc.projectedHistogram;
+import static org.easypr.core.CoreFunc.*;
 
 import java.util.Vector;
 
@@ -12,6 +13,7 @@ import org.easypr.core.CharsIdentify;
 import org.easypr.core.CharsRecognise;
 import org.easypr.core.CoreFunc;
 import org.easypr.core.PlateDetect;
+import org.easypr.core.PlateLocate;
 import org.junit.Test;
 
 /**
@@ -37,6 +39,26 @@ public class EasyPrTest {
                 }
             }
         }
+    }
+    
+    @Test
+    public void testPlateLocate() {
+        String imgPath = "res/image/test_image/test.jpg";
+
+        Mat src = imread(imgPath);
+
+        PlateLocate plate = new PlateLocate();
+        plate.setDebug(true);
+        plate.setLifemode(true);
+
+        Vector<Mat> resultVec = plate.plateLocate(src);
+
+        int num = resultVec.size();
+        for (int j = 0; j < num; j++) {
+            showImage("plate_locate " + j, resultVec.get(j));
+        }
+
+        return;
     }
 
     @Test

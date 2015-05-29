@@ -20,9 +20,8 @@ public class PlateDetect {
      * @return
      */
     public int plateDetect(final Mat src, Vector<Mat> resultVec) {
-        Vector<Mat> matVec = new Vector<Mat>();
-        int resultLo = plateLocate.plateLocate(src, matVec);
-        if (0 != resultLo)
+        Vector<Mat> matVec = plateLocate.plateLocate(src);
+        if (0 == matVec.size())
             return -1;
         int resultJu = plateJudge.plateJudge(matVec, resultVec);
 

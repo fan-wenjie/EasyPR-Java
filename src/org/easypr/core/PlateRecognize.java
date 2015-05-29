@@ -4,11 +4,12 @@ import org.bytedeco.javacpp.opencv_core.*;
 
 import java.util.Vector;
 
-/*
- * Created by fanwenjie
- * @version 1.1
- */
 
+/**
+ * @author Created by fanwenjie
+ * @author lin.yao
+ *
+ */
 public class PlateRecognize {
 
     public int plateRecognize(Mat src, Vector<String> licenseVec) {
@@ -30,11 +31,18 @@ public class PlateRecognize {
         return resultPD;
     }
 
+    /**
+     * 设置是否开启生活模式
+     * @param lifemode
+     */
     public void setLifemode(boolean lifemode) {
         plateDetect.setPDLifemode(lifemode);
     }
 
-    //! 是否开启调试模式
+    /**
+     * 是否开启调试模式
+     * @param debug
+     */
     public void setDebug(boolean debug) {
         plateDetect.setPDDebug(debug);
         charsRecognise.setCRDebug(debug);
