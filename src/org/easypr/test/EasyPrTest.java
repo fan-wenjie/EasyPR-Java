@@ -1,10 +1,9 @@
 package org.easypr.test;
 
 import static org.bytedeco.javacpp.opencv_highgui.imread;
-import static org.bytedeco.javacpp.opencv_highgui.imshow;
 import static org.easypr.core.CoreFunc.getPlateType;
 import static org.easypr.core.CoreFunc.projectedHistogram;
-import static org.easypr.core.CoreFunc.*;
+import static org.easypr.core.CoreFunc.showImage;
 
 import java.util.Vector;
 
@@ -21,10 +20,29 @@ import org.junit.Test;
  * 
  */
 public class EasyPrTest {
+    
+    @Test
+    public void testPlateRecognise() {
+        //String imgPath = "res/image/test_image/test.jpg";
+        String imgPath = "res/image/test_image/plate_recognize.jpg";
+
+        Mat src = imread(imgPath);
+        PlateDetect plateDetect = new PlateDetect();
+        plateDetect.setPDLifemode(true);
+        Vector<Mat> matVector = new Vector<Mat>();
+        if (0 == plateDetect.plateDetect(src, matVector)) {
+            CharsRecognise cr = new CharsRecognise();
+            
+            for (int i = 0; i < matVector.size(); ++i) {
+                String result = cr.charsRecognise(matVector.get(i));
+                System.out.println("Chars Recognised: " + result);
+            }
+        }
+    }
 
     @Test
     public void testPlateDetect() {
-        String imgPath = "res/image/test.jpg";
+        String imgPath = "res/image/test_image/test.jpg";
 
         Mat src = imread(imgPath);
         PlateDetect plateDetect = new PlateDetect();
@@ -32,15 +50,11 @@ public class EasyPrTest {
         Vector<Mat> matVector = new Vector<Mat>();
         if (0 == plateDetect.plateDetect(src, matVector)) {
             for (int i = 0; i < matVector.size(); ++i) {
-                try {
-                    imshow("Plate Detected", matVector.get(i));
-                    System.in.read();
-                } catch (Exception ex) {
-                }
+                showImage("Plate Detected", matVector.get(i));
             }
         }
     }
-    
+
     @Test
     public void testPlateLocate() {
         String imgPath = "res/image/test_image/test.jpg";
@@ -55,7 +69,7 @@ public class EasyPrTest {
 
         int num = resultVec.size();
         for (int j = 0; j < num; j++) {
-            showImage("plate_locate " + j, resultVec.get(j));
+            // showImage("Plate Located " + j, resultVec.get(j));
         }
 
         return;
@@ -89,11 +103,11 @@ public class EasyPrTest {
         Mat src = imread(imgPath);
         projectedHistogram(src, CoreFunc.Direction.HORIZONTAL);
     }
-    
+
     @Test
     public void testCharsIdentify() {
         String imgPath = "res/image/test_image/chars_identify_E.jpg";
-        
+
         Mat src = imread(imgPath);
         CharsIdentify charsIdentify = new CharsIdentify();
         String result = charsIdentify.charsIdentify(src, false, true);

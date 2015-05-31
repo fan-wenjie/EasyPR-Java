@@ -237,13 +237,13 @@ public class CoreFunc {
     }
 
     /**
-     * Asign values to feature
+     * Assign values to feature
      * <p>
-     * ANN的样本特征为水平、垂直直方图和低分辨率图像所组成的矢量
+     * 样本特征为水平、垂直直方图和低分辨率图像所组成的矢量
      * 
      * @param in
      * @param sizeData
-     *            低分辨率图像size = sizeData*sizeData
+     *            低分辨率图像size = sizeData*sizeData, 可以为0
      * @return
      */
     public static Mat features(final Mat in, final int sizeData) {
@@ -252,7 +252,9 @@ public class CoreFunc {
         float[] hhist = projectedHistogram(in, Direction.HORIZONTAL);
 
         Mat lowData = new Mat();
-        resize(in, lowData, new Size(sizeData, sizeData));
+        if (sizeData > 0) {
+            resize(in, lowData, new Size(sizeData, sizeData));
+        }
 
         int numCols = vhist.length + hhist.length + lowData.cols() * lowData.rows();
         Mat out = Mat.zeros(1, numCols, CV_32F).asMat();

@@ -7,35 +7,43 @@ import java.util.Vector;
 import org.bytedeco.javacpp.opencv_core.Mat;
 
 /**
+ * @author Created by fanwenjie
  * @author lin.yao
  * 
  */
 public class PlateDetect {
 
     /**
-     * 可能是车牌的图块集合
-     * 
      * @param src
      * @param resultVec
-     * @return
+     *            可能是车牌的图块集合
+     * @return the error number
+     *         <ul>
+     *         <li>0: plate detected successfully;
+     *         <li>-1: source Mat is empty;
+     *         <li>-2: plate not detected.
+     *         </ul>
      */
     public int plateDetect(final Mat src, Vector<Mat> resultVec) {
         Vector<Mat> matVec = plateLocate.plateLocate(src);
-        if (0 == matVec.size())
+
+        if (0 == matVec.size()) {
             return -1;
-        int resultJu = plateJudge.plateJudge(matVec, resultVec);
+        }
+
+        if (0 != plateJudge.plateJudge(matVec, resultVec)) {
+            return -2;
+        }
 
         if (getPDDebug()) {
             int size = (int) resultVec.size();
             for (int i = 0; i < size; i++) {
                 Mat img = resultVec.get(i);
-                String str = "image/tmp/plate_judge_result_"
-                        + Integer.valueOf(i).toString() + ".jpg";
+                String str = "tmp/plate_judge_result_" + Integer.valueOf(i).toString() + ".jpg";
                 imwrite(str, img);
             }
         }
-        if (0 != resultJu)
-            return -2;
+
         return 0;
     }
 
@@ -48,17 +56,24 @@ public class PlateDetect {
         plateLocate.setLifemode(pdLifemode);
     }
 
-    // ! 是否开启调试模式
+    /**
+     * 是否开启调试模式
+     * 
+     * @param pdDebug
+     */
     public void setPDDebug(boolean pdDebug) {
         plateLocate.setDebug(pdDebug);
     }
 
-    // ! 获取调试模式状态
+    /**
+     * 获取调试模式状态
+     * 
+     * @return
+     */
     public boolean getPDDebug() {
         return plateLocate.getDebug();
     }
 
-    // ! 设置与读取变量
     public void setGaussianBlurSize(int gaussianBlurSize) {
         plateLocate.setGaussianBlurSize(gaussianBlurSize);
     }
@@ -111,10 +126,8 @@ public class PlateDetect {
         plateLocate.setJudgeAngle(judgeAngle);
     }
 
-    // ！车牌定位
     private PlateLocate plateLocate = new PlateLocate();
 
-    // ! 车牌判断
     private PlateJudge plateJudge = new PlateJudge();
 
 }

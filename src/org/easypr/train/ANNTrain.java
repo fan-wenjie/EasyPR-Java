@@ -1,15 +1,26 @@
 package org.easypr.train;
 
-import org.easypr.util.Convert;
-import org.easypr.core.Features;
-import org.easypr.util.Util;
+import static org.bytedeco.javacpp.opencv_core.CV_32F;
+import static org.bytedeco.javacpp.opencv_core.CV_32FC1;
+import static org.bytedeco.javacpp.opencv_core.CV_32SC1;
+import static org.bytedeco.javacpp.opencv_core.CV_STORAGE_WRITE;
+import static org.bytedeco.javacpp.opencv_core.getTickCount;
+import static org.bytedeco.javacpp.opencv_highgui.imread;
+import static org.bytedeco.javacpp.opencv_imgproc.resize;
+import static org.easypr.core.CoreFunc.projectedHistogram;
 
 import java.util.Vector;
 
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_highgui.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
-import static org.bytedeco.javacpp.opencv_ml.*;
+import org.bytedeco.javacpp.opencv_core.CvFileStorage;
+import org.bytedeco.javacpp.opencv_core.CvMemStorage;
+import org.bytedeco.javacpp.opencv_core.FileStorage;
+import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.Scalar;
+import org.bytedeco.javacpp.opencv_core.Size;
+import org.bytedeco.javacpp.opencv_ml.CvANN_MLP;
+import org.easypr.core.CoreFunc.Direction;
+import org.easypr.util.Convert;
+import org.easypr.util.Util;
 
 /*
  * Created by fanwenjie
@@ -17,49 +28,37 @@ import static org.bytedeco.javacpp.opencv_ml.*;
  */
 public class ANNTrain {
 
-
-    private static final int HORIZONTAL = 1;
-    private static final int VERTICAL = 0;
-
     private CvANN_MLP ann = new CvANN_MLP();
 
-    //中国车牌
-    private final char strCharacters[] = {'0', '1', '2', '3', '4', '5',
-            '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', /* 没有I */
-            'J', 'K', 'L', 'M', 'N', /* 没有O */ 'P', 'Q', 'R', 'S', 'T',
-            'U', 'V', 'W', 'X', 'Y', 'Z'};
+    // 中国车牌
+    private final char strCharacters[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
+            'F', 'G', 'H', /* 没有I */
+            'J', 'K', 'L', 'M', 'N', /* 没有O */'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' };
     private final int numCharacter = 34; /* 没有I和0,10个数字与24个英文字符之和 */
 
-    //以下都是我训练时用到的中文字符数据，并不全面，有些省份没有训练数据所以没有字符
-    //有些后面加数字2的表示在训练时常看到字符的一种变形，也作为训练数据存储
-    private final String strChinese[] = {"zh_cuan" /* 川 */, "zh_e" /* 鄂 */, "zh_gan" /* 赣*/,
-            "zh_hei" /* 黑 */, "zh_hu" /* 沪 */, "zh_ji" /* 冀 */,
-            "zh_jl" /* 吉 */, "zh_jin" /* 津 */, "zh_jing" /* 京 */, "zh_shan" /* 陕 */,
-            "zh_liao" /* 辽 */, "zh_lu" /* 鲁 */, "zh_min" /* 闽 */, "zh_ning" /* 宁 */,
-            "zh_su" /* 苏 */, "zh_sx" /* 晋 */, "zh_wan" /* 皖 */,
-            "zh_yu" /* 豫 */, "zh_yue" /* 粤 */, "zh_zhe" /* 浙 */};
+    // 以下都是我训练时用到的中文字符数据，并不全面，有些省份没有训练数据所以没有字符
+    // 有些后面加数字2的表示在训练时常看到字符的一种变形，也作为训练数据存储
+    private final String strChinese[] = { "zh_cuan" /* 川 */, "zh_e" /* 鄂 */, "zh_gan" /* 赣 */, "zh_hei" /* 黑 */,
+            "zh_hu" /* 沪 */, "zh_ji" /* 冀 */, "zh_jl" /* 吉 */, "zh_jin" /* 津 */, "zh_jing" /* 京 */, "zh_shan" /* 陕 */,
+            "zh_liao" /* 辽 */, "zh_lu" /* 鲁 */, "zh_min" /* 闽 */, "zh_ning" /* 宁 */, "zh_su" /* 苏 */, "zh_sx" /* 晋 */,
+            "zh_wan" /* 皖 */, "zh_yu" /* 豫 */, "zh_yue" /* 粤 */, "zh_zhe" /* 浙 */};
 
     private final int numAll = 54; /* 34+20=54 */
 
-    private final int numNeurons = 20;
-    private final int predictSize = 10;
-
     public Mat features(Mat in, int sizeData) {
-        //Histogram features
-        Features feature = new Features();
-        float[][] hist = feature.ProjectedHistogram(in);
-        float[] vhist = hist[0];
-        float[] hhist = hist[1];
+        // Histogram features
+        float[] vhist = projectedHistogram(in, Direction.VERTICAL);
+        float[] hhist = projectedHistogram(in, Direction.HORIZONTAL);
 
-        //Low data feature
+        // Low data feature
         Mat lowData = new Mat();
         resize(in, lowData, new Size(sizeData, sizeData));
 
-        //Last 10 is the number of moments components
+        // Last 10 is the number of moments components
         int numCols = vhist.length + hhist.length + lowData.cols() * lowData.cols();
 
         Mat out = Mat.zeros(1, numCols, CV_32F).asMat();
-        //Asign values to feature,ANN的样本特征为水平、垂直直方图和低分辨率图像所组成的矢量
+        // Asign values to feature,ANN的样本特征为水平、垂直直方图和低分辨率图像所组成的矢量
         int j = 0;
         for (int i = 0; i < vhist.length; i++, ++j) {
             out.ptr(j).put(Convert.getBytes(vhist[i]));
@@ -73,11 +72,10 @@ public class ANNTrain {
                 out.ptr(j).put(Convert.getBytes(val));
             }
         }
-        //if(DEBUG)
-        //	cout << out << "\n===========================================\n";
+        // if(DEBUG)
+        // cout << out << "\n===========================================\n";
         return out;
     }
-
 
     public void annTrain(Mat TrainData, Mat classes, int nNeruns) {
         ann.clear();
@@ -87,21 +85,21 @@ public class ANNTrain {
         layers.ptr(2).put(Convert.getBytes(numAll));
         ann.create(layers, CvANN_MLP.SIGMOID_SYM, 1, 1);
 
-        //Prepare trainClases
-        //Create a mat with n trained data by m classes
+        // Prepare trainClases
+        // Create a mat with n trained data by m classes
         Mat trainClasses = new Mat();
         trainClasses.create(TrainData.rows(), numAll, CV_32FC1);
         for (int i = 0; i < trainClasses.rows(); i++) {
             for (int k = 0; k < trainClasses.cols(); k++) {
-                //If class of data i is same than a k class
+                // If class of data i is same than a k class
                 if (k == Convert.toInt(classes.ptr(i)))
-                    trainClasses.ptr(i,k).put(Convert.getBytes(1f));
+                    trainClasses.ptr(i, k).put(Convert.getBytes(1f));
                 else
-                    trainClasses.ptr(i,k).put(Convert.getBytes(0f));
+                    trainClasses.ptr(i, k).put(Convert.getBytes(0f));
             }
         }
         Mat weights = new Mat(1, TrainData.rows(), CV_32FC1, Scalar.all(1));
-        //Learn classifier
+        // Learn classifier
         ann.train(TrainData, trainClasses, weights);
     }
 
@@ -135,7 +133,7 @@ public class ANNTrain {
                 trainingDataf10.push_back(f10);
                 trainingDataf15.push_back(f15);
                 trainingDataf20.push_back(f20);
-                trainingLabels.add(i);            //每一幅字符图片所对应的字符类别索引下标
+                trainingLabels.add(i); // 每一幅字符图片所对应的字符类别索引下标
             }
         }
 
@@ -191,8 +189,7 @@ public class ANNTrain {
         Mat TrainingData = new Mat(fs.get(training).readObj());
         Mat Classes = new Mat(fs.get("classes"));
 
-
-        //train the Ann
+        // train the Ann
         System.out.println("Begin to saveModelChar predictSize:" + Integer.valueOf(_predictsize).toString());
         System.out.println(" neurons:" + Integer.valueOf(_neurons).toString());
 
@@ -205,35 +202,35 @@ public class ANNTrain {
 
         String model_name = "res/train/ann.xml";
 
-        //if(1)
-        //{
-        //	String str = String.format("ann_prd:%d\tneu:%d",_predictsize,_neurons);
-        //	model_name = str;
-        //}
+        // if(1)
+        // {
+        // String str =
+        // String.format("ann_prd:%d\tneu:%d",_predictsize,_neurons);
+        // model_name = str;
+        // }
 
         CvFileStorage fsto = CvFileStorage.open(model_name, CvMemStorage.create(), CV_STORAGE_WRITE);
         ann.write(fsto, "ann");
     }
-
 
     public int annMain() {
         System.out.println("To be begin.");
 
         saveTrainData();
 
-        //可根据需要训练不同的predictSize或者neurons的ANN模型
-        //for (int i = 2; i <= 2; i ++)
-        //{
-        //	int size = i * 5;
-        //	for (int j = 5; j <= 10; j++)
-        //	{
-        //		int neurons = j * 10;
-        //		saveModel(size, neurons);
-        //	}
-        //}
+        // 可根据需要训练不同的predictSize或者neurons的ANN模型
+        // for (int i = 2; i <= 2; i ++)
+        // {
+        // int size = i * 5;
+        // for (int j = 5; j <= 10; j++)
+        // {
+        // int neurons = j * 10;
+        // saveModel(size, neurons);
+        // }
+        // }
 
-        //这里演示只训练model文件夹下的ann.xml，此模型是一个predictSize=10,neurons=40的ANN模型。
-        //根据机器的不同，训练时间不一样，但一般需要10分钟左右，所以慢慢等一会吧。
+        // 这里演示只训练model文件夹下的ann.xml，此模型是一个predictSize=10,neurons=40的ANN模型。
+        // 根据机器的不同，训练时间不一样，但一般需要10分钟左右，所以慢慢等一会吧。
         saveModel(10, 40);
 
         System.out.println("To be end.");

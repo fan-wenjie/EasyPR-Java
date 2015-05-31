@@ -1,13 +1,18 @@
 package org.easypr.core;
 
+import static org.bytedeco.javacpp.opencv_core.*;
+import static org.bytedeco.javacpp.opencv_highgui.imwrite;
+import static org.bytedeco.javacpp.opencv_imgproc.*;
+
 import java.util.Vector;
 
 import org.bytedeco.javacpp.opencv_core.Mat;
+import org.bytedeco.javacpp.opencv_core.MatVector;
 import org.bytedeco.javacpp.opencv_core.Point;
-
-import static org.bytedeco.javacpp.opencv_core.*;
-import static org.bytedeco.javacpp.opencv_highgui.*;
-import static org.bytedeco.javacpp.opencv_imgproc.*;
+import org.bytedeco.javacpp.opencv_core.Point2f;
+import org.bytedeco.javacpp.opencv_core.RotatedRect;
+import org.bytedeco.javacpp.opencv_core.Scalar;
+import org.bytedeco.javacpp.opencv_core.Size;
 
 /**
  * @author Created by fanwenjie
@@ -41,48 +46,6 @@ public class PlateLocate {
             setVerifyMin(DEFAULT_VERIFY_MIN);
             setVerifyMax(DEFAULT_VERIFY_MAX);
         }
-    }
-
-    // ! 对minAreaRect获得的最小外接矩形，用纵横比进行判断
-    public boolean verifySizes(RotatedRect mr) {
-        float error = this.error;
-        // Spain car plate size: 52x11 aspect 4,7272
-        // China car plate size: 440mm*140mm，aspect 3.142857
-        float aspect = this.aspect;
-        // Set a min and max area. All other patchs are discarded
-        // int min= 1*aspect*1; // minimum area
-        // int max= 2000*aspect*2000; // maximum area
-        int min = 44 * 14 * verifyMin; // minimum area
-        int max = 44 * 14 * verifyMax; // maximum area
-        // Get only patchs that match to a respect ratio.
-        float rmin = aspect - aspect * error;
-        float rmax = aspect + aspect * error;
-
-        int area = (int) (mr.size().height() * mr.size().width());
-        float r = mr.size().width() / mr.size().height();
-        if (r < 1)
-            r = mr.size().height() / mr.size().width();
-        return area >= min && area <= max && r >= rmin && r <= rmax;
-    }
-
-    // ! 显示最终生成的车牌图像，便于判断是否成功进行了旋转。
-    public Mat showResultMat(Mat src, Size rect_size, Point2f center, int index) {
-        Mat img_crop = new Mat();
-        getRectSubPix(src, rect_size, center, img_crop);
-
-        if (debug) {
-            String str = "image/tmp/debug_crop_.jpg";
-            imwrite(str, img_crop);
-        }
-
-        Mat resultResized = new Mat();
-        resultResized.create(HEIGHT, WIDTH, TYPE);
-        resize(img_crop, resultResized, resultResized.size(), 0, 0, INTER_CUBIC);
-        if (debug) {
-            String str = "image/tmp/debug_resize_" + Integer.valueOf(index).toString() + ".jpg";
-            imwrite(str, resultResized);
-        }
-        return resultResized;
     }
 
     /**
@@ -184,46 +147,28 @@ public class PlateLocate {
         for (int i = 0; i < rects.size(); i++) {
             RotatedRect minRect = rects.get(i);
             if (verifySizes(minRect)) {
-                
-                // rotated rectangle drawing
-                // Get rotation matrix
-                // 旋转这部分代码确实可以将某些倾斜的车牌调整正，
-                // 但是它也会误将更多正的车牌搞成倾斜！所以综合考虑，还是不使用这段代码。
-                // 2014-08-14,由于新到的一批图片中发现有很多车牌是倾斜的，因此决定再次尝试
-                // 这段代码。
-                
-                if (debug) {
-                    Point2f p2f = new Point2f();
-                    minRect.points(p2f);
-                    
-                    //System.out.println("p 1:" + p2f.get(0));
-                    //System.out.println("p 1:" + p2f.get(1));
-                    //System.out.println("p 2:" + p2f.get(2));
-                    //System.out.println("p 2:" + p2f.get(3));
-                    
-                    Vector<Point> points = new Vector<Point>();
-                    
-                    for (int j = 0; j < 4; j++) {
-                        float x = p2f.get(j*2);
-                        float y = p2f.get(j*2+1);
-                        
-                        Point point = new Point((int)x, (int)y);
-                        
-                        points.add(point);
-                    }
-                    
 
-                    for (int j = 0; j < 4; j++) {                      
-                        line(result, points.get(j),points.get((j + 1) % 4), new Scalar(0, 255, 255, 255), 1, 8, 0);
+                if (debug) {
+                    Point2f rect_points = new Point2f(4);
+                    minRect.points(rect_points);
+
+                    for (int j = 0; j < 4; j++) {
+                        Point pt1 = new Point(rect_points.position(j).asCvPoint2D32f());
+                        Point pt2 = new Point(rect_points.position((j + 1) % 4).asCvPoint2D32f());
+
+                        line(result, pt1, pt2, new Scalar(0, 255, 255, 255), 1, 8, 0);
                     }
                 }
+
+                // rotated rectangle drawing
+                // 旋转这部分代码确实可以将某些倾斜的车牌调整正，但是它也会误将更多正的车牌搞成倾斜！所以综合考虑，还是不使用这段代码。
+                // 2014-08-14,由于新到的一批图片中发现有很多车牌是倾斜的，因此决定再次尝试这段代码。
 
                 float r = minRect.size().width() / minRect.size().height();
                 float angle = minRect.angle();
                 Size rect_size = new Size((int) minRect.size().width(), (int) minRect.size().height());
                 if (r < 1) {
                     angle = 90 + angle;
-                    // swap(rect_size.width(), rect_size.height());
                     rect_size = new Size(rect_size.height(), rect_size.width());
                 }
                 // 如果抓取的方块旋转超过m_angle角度，则不是车牌，放弃处理
@@ -231,9 +176,8 @@ public class PlateLocate {
                     // Create and rotate image
                     Mat rotmat = getRotationMatrix2D(minRect.center(), angle, 1);
                     Mat img_rotated = new Mat();
-                    // warpAffine(src, img_rotated, rotmat, src.size(),
-                    // CV_INTER_CUBIC);
-                    warpAffine(src, img_rotated, rotmat, src.size());
+                    warpAffine(src, img_rotated, rotmat, src.size()); // CV_INTER_CUBIC
+                    
                     Mat resultMat = showResultMat(img_rotated, rect_size, minRect.center(), k++);
                     resultVec.add(resultMat);
                 }
@@ -316,6 +260,58 @@ public class PlateLocate {
      */
     public boolean getDebug() {
         return debug;
+    }
+    
+    /**
+     * 对minAreaRect获得的最小外接矩形，用纵横比进行判断
+     * 
+     * @param mr
+     * @return
+     */
+    private boolean verifySizes(RotatedRect mr) {
+        float error = this.error;
+
+        // China car plate size: 440mm*140mm，aspect 3.142857      
+        float aspect = this.aspect;
+        int min = 44 * 14 * verifyMin; // minimum area
+        int max = 44 * 14 * verifyMax; // maximum area
+        
+        // Get only patchs that match to a respect ratio.
+        float rmin = aspect - aspect * error;
+        float rmax = aspect + aspect * error;
+
+        int area = (int) (mr.size().height() * mr.size().width());
+        float r = mr.size().width() / mr.size().height();
+        if (r < 1)
+            r = mr.size().height() / mr.size().width();
+        
+        return area >= min && area <= max && r >= rmin && r <= rmax;
+    }
+
+    /**
+     * 显示最终生成的车牌图像，便于判断是否成功进行了旋转。
+     * 
+     * @param src
+     * @param rect_size
+     * @param center
+     * @param index
+     * @return
+     */
+    private Mat showResultMat(Mat src, Size rect_size, Point2f center, int index) {
+        Mat img_crop = new Mat();
+        getRectSubPix(src, rect_size, center, img_crop);
+
+        if (debug) {
+            imwrite("tmp/debug_crop_" + index + ".jpg", img_crop);
+        }
+
+        Mat resultResized = new Mat();
+        resultResized.create(HEIGHT, WIDTH, TYPE);
+        resize(img_crop, resultResized, resultResized.size(), 0, 0, INTER_CUBIC);
+        if (debug) {
+            imwrite("tmp/debug_resize_" + index + ".jpg", resultResized);
+        }
+        return resultResized;
     }
 
     // PlateLocate所用常量
